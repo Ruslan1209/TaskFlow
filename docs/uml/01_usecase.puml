@@ -1,0 +1,45 @@
+
+@startuml
+left to right direction
+actor "Пользователь" as User
+actor "Таймер" as Timer
+
+rectangle TaskFlow {
+  usecase "Создать задачу" as UC1
+  usecase "Изменить задачу" as UC2
+  usecase "Удалить задачу" as UC3
+  usecase "Найти задачи" as UC4
+  usecase "Найти по тегу" as UC5
+  usecase "Найти по дате" as UC6
+  usecase "Найти по приоритету" as UC7
+  usecase "Сохранить задачи в файл" as UC8
+  usecase "Назначить приоритет" as UC9
+  usecase "Уведомить о просроченных задачах" as UC10
+  usecase "Показать просроченные задачи" as UC11
+  usecase "Показать список задач" as UC12
+}
+
+User --> UC1
+User --> UC2
+User --> UC3
+User --> UC4
+User --> UC9
+User --> UC12
+
+UC2 ..> UC8 : <<include>>
+UC1 ..> UC8 : <<include>>
+
+UC9 ..> UC1 : <<extend>>
+
+UC5 --|> UC4
+UC6 --|> UC4
+UC7 --|> UC4
+
+Timer --> UC10
+UC10 ..> UC11 : <<include>>
+
+note right of UC1
+  Задача содержит название,
+  дату, приоритет и теги
+end note
+@enduml
