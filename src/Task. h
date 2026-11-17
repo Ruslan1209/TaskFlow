@@ -1,0 +1,36 @@
+
+// Task.h
+#pragma once
+#include <string>
+#include <vector>
+#include "Priority.h"
+#include "Tag.h"
+using namespace std;
+
+class Task {
+private:
+    int id_;
+    string title_;
+    string date_;          // формат YYYY-MM-DD
+    Priority priority_;
+    vector<Tag*> tags_;    // агрегация: храним указатели на чужие теги
+public:
+    Task() : id_(0), priority_(Priority::NORMAL) {}
+    Task(int id, const string& title, const string& date, Priority p)
+        : id_(id), title_(title), date_(date), priority_(p) {}
+
+    int id() const { return id_; }
+    string getTitle() const { return title_; }
+    string getDate() const { return date_; }
+    Priority getPriority() const { return priority_; }
+
+    void addTag(Tag* tag) { tags_.push_back(tag); }
+
+    bool matchesTag(const string& tag) const {
+        for (const Tag* t : tags_)
+            if (t->matches(tag)) return true;
+        return false;
+    }
+    bool matchesDate(const string& date) const { return date_ == date; }
+    bool matchesPriority(Priority p) const { return priority_ == p; }
+};
