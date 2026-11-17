@@ -1,0 +1,46 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+class Task {
+  - id : int
+  - title : string
+  - date : string
+  - priority : int
+  - tags : vector<string>
+  + matchesTag(tag : string) : bool
+  + matchesDate(date : string) : bool
+  + matchesPriority(priority : int) : bool
+}
+
+class TaskList {
+  - tasks : vector<Task>
+  + addTask(task : Task) : void
+  + editTask(id : int, task : Task) : bool
+  + removeTask(id : int) : bool
+  + findByTag(tag : string) : vector<Task>
+  + findByDate(date : string) : vector<Task>
+  + findByPriority(priority : int) : vector<Task>
+  + sortedByDate() : vector<Task>
+}
+
+interface ITaskStorage {
+  + save(tasks : vector<Task>) : bool
+  + load() : vector<Task>
+}
+
+class CsvTaskStorage {
+  - filename : string
+  + save(tasks : vector<Task>) : bool
+  + load() : vector<Task>
+}
+
+class Reminder {
+  + check(tasks : vector<Task>, today : string) : vector<Task>
+}
+
+Task "1" *-- "0..*" TaskList : содержит
+ITaskStorage <|.. CsvTaskStorage : реализует
+TaskList ..> ITaskStorage : сохраняет/загружает
+Reminder ..> Task : проверяет даты
+
+@enduml
