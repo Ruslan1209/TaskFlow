@@ -1,9 +1,8 @@
 #ifndef TASK_H
 #define TASK_H
-
 #include <string>
 
-enum class Priority { LOW, NORMAL, HIGH };
+//enum class Priority { LOW, NORMAL, HIGH };
 
 enum class TaskStatus {
     NEW,        // Новая
