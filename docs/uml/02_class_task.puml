@@ -1,0 +1,106 @@
+@startuml
+hide circle
+skinparam classAttributeIconSize 0
+
+enum Priority {
+  LOW
+  NORMAL
+  HIGH
+}
+
+enum TaskStatus {
+  NEW
+  IN_WORK
+  PAUSED
+  OVERDUE
+  DONE
+  CANCELLED
+  ARCHIVED
+}
+
+class Task {
+  - id : int
+  - title : string
+  - date : string
+  - priority : Priority
+  - status : TaskStatus
+  - completedDate : string
+  + setId(id : int) : void
+  + setTitle(title : string) : void
+  + setDate(date : string) : void
+  + setPriority(p : Priority) : void
+  + setStatus(s : TaskStatus) : void
+  + setCompletedDate(d : string) : void
+  + start(today : string) : bool
+  + pause() : bool
+  + markDone(today : string) : bool
+  + cancel() : bool
+  + archive() : bool
+  + check(today : string) : bool
+  + matchesTag(tag : string) : bool
+  + matchesDate(date : string) : bool
+  + matchesPriority(p : Priority) : bool
+}
+
+class Tag {
+  - name : string
+  + name() : string
+  + matches(other : string) : bool
+}
+
+class TaskList {
+  - tasks : vector<Task>
+  + addTask(task : Task) : void
+  + editTask(id : int, task : Task) : bool
+  + removeTask(id : int) : bool
+  + findBy(filter : TaskFilter) : vector<Task>
+  + sortedByDate() : vector<Task>
+}
+
+class TaskFilter {
+  - tag : string
+  - date : string
+  - priority : Priority
+  + matches(task : Task) : bool
+}
+
+class User {
+  - name : string
+  + getName() : string
+  + getTaskList() : TaskList
+}
+
+class Reminder {
+  - today : string
+  + setToday(date : string) : void
+  + check(tasks : vector<Task>, today : string) : vector<Task>
+}
+
+interface ITaskStorage {
+  + save(tasks : vector<Task>) : bool
+  + load() : vector<Task>
+}
+
+abstract class FileStorage {
+  # filename : string
+  + save(tasks : vector<Task>) : bool
+  + load() : vector<Task>
+}
+
+class CsvTaskStorage {
+  + save(tasks : vector<Task>) : bool
+  + load() : vector<Task>
+}
+
+TaskList "1" *-- "0..*" Task : содержит
+Task "1" o-- "0..*" Tag : помечена
+User "1" --> "1" TaskList : владеет
+Task --> Priority : имеет
+Task --> TaskStatus : имеет
+TaskList ..> TaskFilter : фильтрует через
+TaskList ..> ITaskStorage : сохраняет/загружает через
+Reminder ..> Task : проверяет даты
+ITaskStorage <|.. FileStorage : реализует
+FileStorage <|-- CsvTaskStorage : наследует
+
+@enduml
