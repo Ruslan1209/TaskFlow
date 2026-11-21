@@ -1,104 +1,70 @@
-#ifndef TASK_H
-#define TASK_H
+#include <iostream>
+#include "Priority.h"
+#include "Task.h"
+using namespace std;
 
-#include <string>
-#include "Priority.h"   // Priority уже объявлен у тебя отдельным файлом
+void report(const string& action, bool ok) {
+    cout << (ok ? "сработал:      " : "ЗАПРЕЩЁН:  ") << action << "\n";
+}
 
-enum class TaskStatus {
-    NEW,        // Новая
-    IN_WORK,    // В работе
-    PAUSED,     // Приостановлена
-    OVERDUE,    // Просрочена
-    DONE,       // Выполнена
-    CANCELLED,  // Отменена
-    ARCHIVED    // В архиве
-};
+int main() {
+    // 1. Новая задача, срок в будущем
+    Task t1;
+    t1.setId(1);
+    t1.setTitle("Сдать лабу");
+    t1.setDate("2026-11-25");
+    t1.setPriority(Priority::HIGH);
+    cout << "Задача 1 создана, статус: NEW\n";
 
-class Task {
-    int id;
-    std::string title;
-    std::string date;      // формат "ГГГГ-ММ-ДД"
-    Priority priority;
-    TaskStatus status;
-    std::string completedDate;
+    // 2. NEW -> IN_WORK
+    report("start   (NEW -> IN_WORK)", t1.start("2026-11-21"));
 
-public:
-    Task() : id(0), priority(Priority::NORMAL), status(TaskStatus::NEW) {}
+    // 3. повторный start из IN_WORK — запрещён
+    report("start   (IN_WORK -> IN_WORK)", t1.start("2026-11-21"));
 
-    // сеттеры — операции с диаграммы последовательности
-    void setId(int newId)               { id = newId; }
-    void setTitle(const std::string& t) { title = t; }
-    void setDate(const std::string& d)  { date = d; }
-    void setPriority(Priority p)        { priority = p; }
-    void setStatus(TaskStatus s)        { status = s; }
-    void setCompletedDate(const std::string& d) { completedDate = d; }
+    // 4. IN_WORK -> PAUSED
+    report("pause   (IN_WORK -> PAUSED)", t1.pause());
 
-    TaskStatus  getStatus() const { return status; }
-    std::string getTitle() const  { return title; }
-    std::string getDate() const   { return date; }
+    // 5. PAUSED -> IN_WORK
+    report("start   (PAUSED -> IN_WORK)", t1.start("2026-11-21"));
 
-    // ---------- события диаграммы состояний ----------
+    // 6. IN_WORK -> DONE
+    report("markDone(IN_WORK -> DONE)", t1.markDone("2026-11-22"));
 
-    bool start(const std::string& today) {
-        if (status == TaskStatus::NEW && today > date)
-            return false;                      // [дата не в прошлом]
-        if (status == TaskStatus::NEW ||
-            status == TaskStatus::PAUSED ||
-            status == TaskStatus::OVERDUE) {
-            status = TaskStatus::IN_WORK;
-            return true;
-        }
-        return false;
-    }
+    // 7. cancel после DONE — запрещён
+    report("cancel  (DONE -> CANCELLED)", t1.cancel());
 
-    bool pause() {
-        if (status != TaskStatus::IN_WORK) return false;
-        status = TaskStatus::PAUSED;
-        return true;
-    }
+    // 8. DONE -> ARCHIVED
+    report("archive (DONE -> ARCHIVED)", t1.archive());
 
-    bool markDone(const std::string& today) {
-        if (status != TaskStatus::IN_WORK &&
-            status != TaskStatus::PAUSED &&
-            status != TaskStatus::OVERDUE)
-            return false;
-        status = TaskStatus::DONE;
-        setCompletedDate(today);
-        return true;
-    }
+    // 9. повторный archive — запрещён
+    report("archive (ARCHIVED -> ARCHIVED)", t1.archive());
 
-    bool cancel() {
-        if (status == TaskStatus::DONE ||
-            status == TaskStatus::CANCELLED ||
-            status == TaskStatus::ARCHIVED)
-            return false;
-        status = TaskStatus::CANCELLED;
-        return true;
-    }
+    // 10. NEW с прошедшим сроком: start запрещён
+    Task t2;
+    t2.setId(2);
+    t2.setTitle("Оплатить интернет");
+    t2.setDate("2026-11-01");
+    t2.setPriority(Priority::NORMAL);
+    cout << "Задача 2 создана, срок уже прошёл, статус: NEW\n";
+    report("start   (NEW, срок прошёл)", t2.start("2026-11-21"));
 
-    bool archive() {
-        if (status != TaskStatus::DONE &&
-            status != TaskStatus::OVERDUE &&
-            status != TaskStatus::CANCELLED)
-            return false;
-        status = TaskStatus::ARCHIVED;
-        return true;
-    }
+    // 11. NEW -> CANCELLED
+    report("cancel  (NEW -> CANCELLED)", t2.cancel());
 
-    bool check(const std::string& today) {
-        if (status != TaskStatus::IN_WORK &&
-            status != TaskStatus::PAUSED)
-            return false;
-        if (today <= date)
-            return false;                      // [срок прошёл] не выполнено
-        status = TaskStatus::OVERDUE;
-        return true;
-    }
+    // 12. CANCELLED -> ARCHIVED
+    report("archive (CANCELLED -> ARCHIVED)", t2.archive());
 
-    // ---------- методы из ДЗ-2 ----------
-    bool matchesTag(const std::string& tag) const { return title.find(tag) != std::string::npos; }
-    bool matchesDate(const std::string& d) const  { return date == d; }
-    bool matchesPriority(Priority p) const        { return priority == p; }
-};
+    // 13. Просрочка: работали дольше срока, срок истёк
+    Task t3;
+    t3.setId(3);
+    t3.setTitle("Прочитать главу");
+    t3.setDate("2026-11-19");
+    t3.setPriority(Priority::LOW);
+    t3.start("2026-11-15");
+    cout << "Задача 3 в работе, срок истёк\n";
+    report("check   (IN_WORK -> OVERDUE)", t3.check("2026-11-21"));
 
-#endif
+    // 14. OVERDUE -> DONE
+    report("markDone(OVERDUE -> DONE)", t3.markDone("2026-11-21"));
+}
