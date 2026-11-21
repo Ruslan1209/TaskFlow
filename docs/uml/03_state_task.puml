@@ -1,0 +1,26 @@
+@startuml
+title Диаграмма состояний задачи (TaskFlow)
+
+state "Активна" as active {
+  state "В работе" as inWork
+  state "Приостановлена" as paused
+  inWork --> paused : pause()
+  paused --> inWork : start()
+}
+
+[*] --> Новая : addTask()\n/ setStatus(NEW)
+Новая --> active : start(today)\n[дата не в прошлом]
+active --> Просрочена : check(today)\n[срок прошёл]
+active --> Выполнена : markDone(today)\n/ setCompletedDate(today)
+Просрочена --> Выполнена : markDone(today)\n/ setCompletedDate(today)
+Новая --> Отменена : cancel()
+active --> Отменена : cancel()
+Выполнена --> В архиве : archive() / saveToStorage()
+Просрочена --> В архиве : archive() / saveToStorage()
+Отменена --> В архиве : archive() / saveToStorage()
+В архиве --> [*]
+
+Новая : entry / setStatus(NEW)
+Выполнена : entry / setCompletedDate(today)
+В архиве : exit / saveToStorage()
+@enduml
