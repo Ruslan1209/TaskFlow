@@ -1,0 +1,58 @@
+@startuml 04_seq_save
+title Диаграмма последовательности: "Сохранить и загрузить список"
+
+actor Пользователь as User
+participant ":Menu" as M
+participant ":TaskService" as S
+participant "st: ITaskStorage\n(TxtStorage)" as I
+participant "t: Task" as T
+
+== Сохранение ==
+User -> M : выбрать пункт "Сохранить"
+activate M
+M -> S : saveAll("tasks.csv")
+activate S
+S -> I : save(tasks, "tasks.csv")
+activate I
+
+alt [файл открылся успешно]
+  loop [по каждой задаче t в списке]
+    S -> T : describe()
+    activate T
+    T --> S : строка задачи
+    deactivate T
+    S -> I : writeLine(строка)
+  end
+  I --> S : ok (сохранено N задач)
+else [ошибка открытия файла]
+  I --> S : IOException
+end
+deactivate I
+S --> M : результат сохранения
+M --> User : "Список сохранён" / "Ошибка записи файла"
+deactivate S
+deactivate M
+
+== Загрузка ==
+User -> M : выбрать пункт "Загрузить"
+activate M
+M -> S : loadAll("tasks.csv")
+activate S
+S -> I : load("tasks.csv")
+activate I
+alt [файл найден]
+  I --> S : vector<Task*> (загруженные задачи)
+else [файл не найден]
+  I --> S : FileNotFoundException
+end
+deactivate I
+S --> M : результат загрузки
+M --> User : "Загружено N задач" / "Файл не найден"
+deactivate S
+deactivate M
+
+note over S, I
+  {временное ограничение}
+  сохранение 1000 задач <= 1 сек
+end note
+@enduml
