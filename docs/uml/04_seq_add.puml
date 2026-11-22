@@ -1,0 +1,32 @@
+@startuml 04_seq_add
+title Диаграмма последовательности: "Добавить задачу"
+
+actor Пользователь as User
+participant ":Menu" as M
+participant ":TaskService" as S
+participant ":TaskList" as L
+participant "t: Task" as T
+
+User -> M : выбрать пункт "Добавить задачу"
+activate M
+M -> M : readInput(title, priority)
+M -> S : addTask(title, priority)
+activate S
+
+S -> S : validate(title, priority)
+alt [данные верные: заголовок не пуст, 1 <= priority <= 5]
+  create T
+  S -> T : <<create>> Task(title, priority)
+  S -> L : add(t)
+  activate L
+  L --> S : ok
+  deactivate L
+  S --> M : результат = true
+else [данные неверные: пустой заголовок]
+  S --> M : результат = false
+end
+
+M --> User : "Задача добавлена" / "Ошибка: пустой заголовок"
+deactivate S
+deactivate M
+@enduml
