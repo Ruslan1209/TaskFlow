@@ -1,81 +1,74 @@
-@startuml
-hide circle
+@startuml 02_class_domain
 skinparam classAttributeIconSize 0
+title Диаграмма классов TaskFlow (обновлённая, ДЗ-4)
 
-enum Priority {
-  LOW
-  NORMAL
-  HIGH
+class Menu {
+  - choice : int
+  + run() : void
+  + show() : void
+  + readInput() : string
 }
 
-class Task {
-  - id : int
-  - title : string
-  - date : string
-  - priority : Priority
-  + matchesTag(tag : string) : bool
-  + matchesDate(date : string) : bool
-  + matchesPriority(p : Priority) : bool
-}
-
-class Tag {
-  - name : string
-  + name() : string
-  + matches(other : string) : bool
-}
-
-class TaskList {
-  - tasks : vector<Task>
-  + addTask(task : Task) : void
-  + editTask(id : int, task : Task) : bool
-  + removeTask(id : int) : bool
-  + findBy(filter : TaskFilter) : vector<Task>
-  + sortedByDate() : vector<Task>
-}
-
-class TaskFilter {
-  - tag : string
-  - date : string
-  - priority : Priority
-  + matches(task : Task) : bool
+class TaskService {
+  - lists : vector<TaskList*>
+  + addTask(title : string, priority : int) : bool
+  + findTasks(keyword : string) : vector<Task*>
+  + saveAll(file : string) : bool
+  + loadAll(file : string) : bool
 }
 
 class User {
   - name : string
-  + getName() : string
-  + getTaskList() : TaskList
 }
 
-class Reminder {
-  - today : string
-  + setToday(date : string) : void
-  + check(tasks : vector<Task>, today : string) : vector<Task>
+class TaskList {
+  - tasks : vector<Task*>
+  + add(t : Task*) : void
+  + remove(t : Task*) : void
+  + getAll() : vector<Task*>
+  + count() : int
+}
+
+abstract class Task {
+  # title : string
+  # priority : int
+  - done : bool
+  + markDone() : void
+  + getTitle() const : string
+  + matches(keyword : string) const : bool
+  + {abstract} describe() const : string
+}
+
+class DeadlineTask {
+  - deadline : string
+  + describe() const : string
+}
+
+class Tag {
+  - name : string
+}
+
+class TaskPrinter {
+  + print(t : const Task&) const : void
 }
 
 interface ITaskStorage {
-  + save(tasks : vector<Task>) : bool
-  + load() : vector<Task>
+  + {abstract} save(tasks : vector<Task*>, file : string) : bool
+  + {abstract} load(file : string) : vector<Task*>
 }
 
-abstract class FileStorage {
-  # filename : string
-  + save(tasks : vector<Task>) : bool
-  + load() : vector<Task>
+class TxtStorage {
+  + save(tasks : vector<Task*>, file : string) : bool
+  + load(file : string) : vector<Task*>
 }
 
-class CsvTaskStorage {
-  + save(tasks : vector<Task>) : bool
-  + load() : vector<Task>
-}
-
-TaskList "1" *-- "0..*" Task : содержит
-Task "1" o-- "0..*" Tag : помечена
-User "1" --> "1" TaskList : владеет
-Task --> Priority : имеет
-TaskList ..> TaskFilter : фильтрует через
-TaskList ..> ITaskStorage : сохраняет/загружает через
-Reminder ..> Task : проверяет даты
-ITaskStorage <|.. FileStorage : реализует
-FileStorage <|-- CsvTaskStorage : наследует
-
+User "1" --> "*" TaskList : владеет
+TaskList "1" *-- "*" Task : хранит
+Task o-- "*" Tag : помечена
+Task <|-- DeadlineTask
+TaskPrinter ..> Task : печатает
+TaskService "*" --> "*" TaskList : управляет
+TaskService ..> ITaskStorage : использует
+TxtStorage .up.|> ITaskStorage : реализует
+Menu "1" --> "1" TaskService : вызывает
 @enduml
