@@ -1,0 +1,25 @@
+@startuml 04_component
+title Компонентная диаграмма TaskFlow
+
+component "Консольное меню\n(Menu)" as Menu
+component "Ядро задач\n(TaskService, TaskList,\nTask, DeadlineTask, Tag)" as Core
+component "Хранилище\n(TxtStorage)" as Storage
+component "Уведомления\n(TaskPrinter)" as Printer
+
+interface "ITaskStorage" as IS
+interface "ITaskPrinter" as IP
+
+Storage -up- IS : предоставляет
+Printer -up- IP : предоставляет
+Core ..> IS : использует
+Core ..> IP : использует
+Menu --> Core : вызывает операции
+
+note bottom of IS
+  save(tasks, file)
+  load(file)
+end note
+note bottom of IP
+  print(t)
+end note
+@enduml
