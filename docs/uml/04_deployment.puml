@@ -1,0 +1,19 @@
+@startuml 04_deployment
+title Диаграмма развертывания TaskFlow
+
+node "Компьютер пользователя" as PC {
+  node "ОС: Windows / Linux" as OS {
+    artifact "taskflow.exe\n(исполняемый файл)" as Exe
+    artifact "tasks.csv\n(файл задач)" as Tasks
+    artifact "settings.ini\n(файл настроек)" as Cfg
+  }
+}
+
+cloud "Облачное хранилище\n(синхронизация)" as Cloud {
+  artifact "tasks_backup.csv" as Backup
+}
+
+Exe --> Tasks : файловый ввод-вывод\n(локальный диск)
+Exe --> Cfg : чтение настроек\n(локальный диск)
+Exe --> Cloud : HTTPS\n(резервное копирование)
+@enduml
