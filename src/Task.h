@@ -33,6 +33,7 @@ public:
     void setStatus(TaskStatus s)        { status = s; }
     void setCompletedDate(const std::string& d) { completedDate = d; }
 
+    int getId() const { return id; }
     TaskStatus  getStatus() const { return status; }
     std::string getTitle() const  { return title; }
     std::string getDate() const   { return date; }
