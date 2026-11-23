@@ -18,6 +18,7 @@ New --> Active : start(today)\n[дата не в прошлом]
 Active --> Overdue : check(today)\n[срок прошёл]
 Active --> Done : markDone(today)\n/ setCompletedDate(today)
 Overdue --> Done : markDone(today)\n/ setCompletedDate(today)
+Overdue --> InWork : start(today)
 New --> Cancelled : cancel()
 Active --> Cancelled : cancel()
 Done --> Archived : archive()\n/ saveToStorage()
