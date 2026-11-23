@@ -1,6 +1,7 @@
 #include <iostream>
 #include "Priority.h"
 #include "Task.h"
+#include "TaskService.h"
 using namespace std;
 
 void report(const string& action, bool ok) {
