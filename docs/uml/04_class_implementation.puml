@@ -1,0 +1,132 @@
+@startuml 04_class_implementation
+title Диаграмма классов: реализация (ДЗ-4)
+
+hide circle
+skinparam classAttributeIconSize 0
+
+enum Priority {
+  LOW = 1
+  MEDIUM = 2
+  HIGH = 3
+}
+
+enum TaskStatus {
+  NEW
+  IN_WORK
+  PAUSED
+  OVERDUE
+  DONE
+  CANCELLED
+  ARCHIVED
+}
+
+class Task {
+  - id : int
+  - title : string
+  - date : string
+  - priority : Priority
+  - status : TaskStatus
+  - completedDate : string
+  + setId(newId : int) : void
+  + setTitle(t : string) : void
+  + setDate(d : string) : void
+  + setPriority(p : Priority) : void
+  + setStatus(s : TaskStatus) : void
+  + setCompletedDate(d : string) : void
+  + getId() : int
+  + getStatus() : TaskStatus
+  + getTitle() : string
+  + getDate() : string
+  + getPriority() : Priority
+  + start(today : string) : bool
+  + pause() : bool
+  + markDone(today : string) : bool
+  + cancel() : bool
+  + archive() : bool
+  + check(today : string) : bool
+  + matchesTag(tag : string) : bool
+  + matchesDate(d : string) : bool
+  + matchesPriority(p : Priority) : bool
+}
+
+class TaskList {
+  - tasks_ : vector<Task>
+  + addTask(task : Task) : void
+  + editTask(id : int, task : Task) : bool
+  + removeTask(id : int) : bool
+  + findBy(filter : TaskFilter) : vector<Task>
+  + sortedByDate() : vector<Task>
+}
+
+class TaskService {
+  - taskList_ : TaskList*
+  + setTaskList(list : TaskList*) : void
+  + addTask(title : string, priority : int) : bool
+  + removeTask(id : int) : bool
+  + validate(title : string, priority : int) : bool
+}
+
+class TaskFilter {
+  - tag_ : string
+  - date_ : string
+  - priority_ : Priority
+  + setTag(tag : string) : void
+  + setDate(date : string) : void
+  + setPriority(p : Priority) : void
+  + matches(task : Task) : bool
+}
+
+class User {
+  - name_ : string
+  - taskList_ : TaskList*
+  + User(name : string)
+  + getName() : string
+  + attachList(list : TaskList*) : void
+  + getTaskList() : TaskList*
+}
+
+class Tag {
+  - name_ : string
+  + Tag(name : string)
+  + name() : string
+  + matches(other : string) : bool
+}
+
+class Reminder {
+  - today_ : string
+  + setToday(date : string) : void
+  + check(tasks : vector<Task>, today : string) : vector<Task>
+}
+
+interface ITaskStorage {
+  + save(tasks : vector<Task>) : bool
+  + load() : vector<Task>
+}
+
+class FileStorage {
+  # filename_ : string
+  + FileStorage(filename : string)
+  + save(tasks : vector<Task>) : bool
+  + load() : vector<Task>
+}
+
+class CsvTaskStorage {
+  + save(tasks : vector<Task>) : bool
+  + load() : vector<Task>
+  + writeLine(task : Task) : void
+}
+
+TaskList *-- "1..*" Task : содержит
+User "1" --> "1" TaskList : работает со списком
+TaskService --> TaskList : изменяет
+TaskService ..> Task : validate()/создаёт
+TaskList ..> TaskFilter : findBy()
+TaskFilter ..> Task : matches()
+Reminder ..> Task : check()
+ITaskStorage ..> Task : save()/load()
+FileStorage ..|> ITaskStorage : реализует
+CsvTaskStorage --|> FileStorage : наследует
+Task ..> Priority
+Task ..> TaskStatus
+TaskFilter ..> Priority
+@enduml
