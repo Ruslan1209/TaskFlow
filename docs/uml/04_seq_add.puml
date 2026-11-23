@@ -14,7 +14,7 @@ M -> S : addTask(title, priority)
 activate S
 
 S -> S : validate(title, priority)
-alt [данные верные: заголовок не пуст, 1 <= priority <= 5]
+alt [данные верные: заголовок не пуст, 1 <= priority <= 3]
   create T
   S -> T : <<create>> Task(title, priority)
   S -> L : add(t)
