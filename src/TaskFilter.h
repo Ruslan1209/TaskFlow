@@ -1,7 +1,6 @@
 // TaskFilter.h
 #pragma once
 #include <string>
-//#include "Priority.h"
 #include "Task.h"
 using namespace std;
 
@@ -12,7 +11,7 @@ private:
     string date_;
     Priority priority_;
 public:
-    TaskFilter() : priority_(Priority::NORMAL) {}
+    TaskFilter() : priority_(Priority::Medium) {}
 
     void setTag(const string& tag) { tag_ = tag; }
     void setDate(const string& date) { date_ = date; }
