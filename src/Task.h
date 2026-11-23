@@ -1,8 +1,7 @@
 #ifndef TASK_H
 #define TASK_H
 #include <string>
-
-//enum class Priority { LOW, NORMAL, HIGH };
+#include "Priority.h"
 
 enum class TaskStatus {
     NEW,        // Новая
@@ -23,7 +22,7 @@ class Task {
     std::string completedDate;
 
 public:
-    Task() : id(0), priority(Priority::NORMAL), status(TaskStatus::NEW) {}
+    Task() : id(0), priority(Priority::Medium), status(TaskStatus::NEW) {}
 
     // сеттеры — операции с диаграммы последовательности
     void setId(int newId)               { id = newId; }
@@ -37,6 +36,7 @@ public:
     TaskStatus  getStatus() const { return status; }
     std::string getTitle() const  { return title; }
     std::string getDate() const   { return date; }
+    Priority getPriority() const  { return priority; }
 
     // ---------- события диаграммы состояний ----------
 
