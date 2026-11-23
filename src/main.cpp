@@ -1,3 +1,4 @@
+
 #include <iostream>
 #include "Priority.h"
 #include "Task.h"
@@ -14,7 +15,7 @@ int main() {
     t1.setId(1);
     t1.setTitle("Сдать лабу");
     t1.setDate("2026-11-25");
-    t1.setPriority(Priority::HIGH);
+    t1.setPriority(Priority::High);
     cout << "Задача 1 создана, статус: NEW\n";
 
     // 2. NEW -> IN_WORK
@@ -46,7 +47,7 @@ int main() {
     t2.setId(2);
     t2.setTitle("Оплатить интернет");
     t2.setDate("2026-11-01");
-    t2.setPriority(Priority::NORMAL);
+    t2.setPriority(Priority::Medium);
     cout << "Задача 2 создана, срок уже прошёл, статус: NEW\n";
     report("start   (NEW, срок прошёл)", t2.start("2026-11-21"));
 
@@ -61,7 +62,7 @@ int main() {
     t3.setId(3);
     t3.setTitle("Прочитать главу");
     t3.setDate("2026-11-19");
-    t3.setPriority(Priority::LOW);
+    t3.setPriority(Priority::Low);
     t3.start("2026-11-15");
     cout << "Задача 3 в работе, срок истёк\n";
     report("check   (IN_WORK -> OVERDUE)", t3.check("2026-11-21"));
