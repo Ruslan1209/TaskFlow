@@ -1,0 +1,33 @@
+@startuml
+title Последовательность «Добавить задачу»
+
+participant "user : User" as u
+participant "list : TaskList" as list
+participant "task : Task" as task
+participant "storage : CsvTaskStorage" as storage
+
+u -> list : addTask(task)
+activate list
+list -> task : setTitle(title)
+activate task
+task --> list : ок
+deactivate task
+list -> task : setDate(date)
+activate task
+task --> list : ок
+deactivate task
+list -> task : setPriority(priority)
+activate task
+task --> list : ок
+deactivate task
+list -> task : setStatus(NEW)
+activate task
+task --> list : ок
+deactivate task
+list -> storage : save(tasks)
+activate storage
+storage --> list : true
+deactivate storage
+list --> u : true
+deactivate list
+@enduml
