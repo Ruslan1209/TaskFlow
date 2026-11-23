@@ -1,11 +1,12 @@
 // TaskFilter.h
 #pragma once
 #include <string>
-#include "Priority.h"
+//#include "Priority.h"
 #include "Task.h"
 using namespace std;
 
-class TaskFilter {
+class TaskFilter 
+{
 private:
     string tag_;
     string date_;
@@ -17,7 +18,8 @@ public:
     void setDate(const string& date) { date_ = date; }
     void setPriority(Priority p) { priority_ = p; }
 
-    bool matches(const Task& task) const {   // зависимость: Task только в параметре
+    bool matches(const Task& task) const // зависимость: Task только в параметре
+    {   
         if (!tag_.empty() && !task.matchesTag(tag_)) return false;
         if (!date_.empty() && !task.matchesDate(date_)) return false;
         if (!task.matchesPriority(priority_)) return false;
