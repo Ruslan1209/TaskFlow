@@ -40,5 +40,30 @@ public:
     bool matchesDate(const string& d) const { return date == d; }
     bool matchesPriority(Priority p) const { return priority == p; }
 };
+class SimpleTask : public Task {
+public:
+    SimpleTask() {}
+    string typeName() const { return "обычная"; }
+    string extraInfo() const { return ""; }
+};
 
+class DeadlineTask : public Task {
+    string deadline_;
+public:
+    DeadlineTask() {}
+    void setDeadline(const string& d) { deadline_ = d; }
+    string getDeadline() const { return deadline_; }
+    string typeName() const { return "со сроком"; }
+    string extraInfo() const { return deadline_; }
+};
+
+class RecurringTask : public Task {
+    int intervalDays_;
+public:
+    RecurringTask() : intervalDays_(1) {}
+    int getInterval() const { return intervalDays_; }
+    void setInterval(int n) { intervalDays_ = n; }
+    string typeName() const { return "повторяющаяся"; }
+    string extraInfo() const { return "каждые " + to_string(intervalDays_) + " дн."; }
+};
 #endif // TASK_H
