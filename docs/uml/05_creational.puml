@@ -1,0 +1,109 @@
+@startuml
+hide circle
+skinparam classAttributeIconSize 0
+
+' ===== Паттерн 1: Singleton =====
+package "Singleton" {
+  class AppSettings <<Singleton>> {
+    - pathToFile : string
+    - format : string
+    - AppSettings()
+    + instance() : AppSettings&
+    + getPathToFile() : string
+    + getFormat() : string
+    + setPathToFile(p : string) : void
+    + setFormat(f : string) : void
+  }
+  class TaskFactory <<Singleton>> {
+    - creators : vector<unique_ptr<TaskCreator>>
+    - TaskFactory()
+    + instance() : TaskFactory&
+    + create(type : string) : unique_ptr<Task>
+    + typeNames() : vector<string>
+  }
+}
+note bottom of AppSettings
+  конструктор закрыт, копирование запрещено;
+  единственная точка доступа — instance()
+end note
+note bottom of TaskFactory
+  тот же приём Meyers' Singleton:
+  static-переменная внутри instance()
+end note
+
+' ===== Паттерн 2: Factory Method =====
+package "Factory Method" {
+  interface TaskCreator <<Creator>> {
+    + typeName() : string
+    + create() : unique_ptr<Task>
+  }
+  class SimpleTaskCreator <<ConcreteCreator>> {
+    + create() : unique_ptr<Task>
+  }
+  class DeadlineTaskCreator <<ConcreteCreator>> {
+    + create() : unique_ptr<Task>
+  }
+  class RecurringTaskCreator <<ConcreteCreator>> {
+    + create() : unique_ptr<Task>
+  }
+  class Task <<Product>> {
+    + typeName() : string
+    + extraInfo() : string
+  }
+  class SimpleTask <<ConcreteProduct>>
+  class DeadlineTask <<ConcreteProduct>>
+  class RecurringTask <<ConcreteProduct>> {
+    - intervalDays : int
+    + setInterval(n : int) : void
+  }
+}
+Task <|-- SimpleTask
+Task <|-- DeadlineTask
+Task <|-- RecurringTask
+TaskCreator <|.. SimpleTaskCreator
+TaskCreator <|.. DeadlineTaskCreator
+TaskCreator <|.. RecurringTaskCreator
+TaskCreator ..> Task : создаёт
+TaskFactory o-- TaskCreator : реестр создателей
+TaskFactory ..> Task : создаёт по имени типа
+
+' ===== Паттерн 3: Abstract Factory =====
+package "Abstract Factory" {
+  interface IStorageFactory <<AbstractFactory>> {
+    + formatName() : string
+    + createTaskStorage() : unique_ptr<ITaskStorage>
+    + createSettingsStorage() : unique_ptr<ISettingsStorage>
+  }
+  class TxtStorageFactory <<ConcreteFactory>> {
+    + formatName() : string
+    + createTaskStorage() : unique_ptr<ITaskStorage>
+    + createSettingsStorage() : unique_ptr<ISettingsStorage>
+  }
+  class CsvStorageFactory <<ConcreteFactory>> {
+    + formatName() : string
+    + createTaskStorage() : unique_ptr<ITaskStorage>
+    + createSettingsStorage() : unique_ptr<ISettingsStorage>
+  }
+  interface ITaskStorage <<AbstractProduct>> {
+    + save(list : TaskList, path : string) : bool
+    + load(list : TaskList, path : string) : int
+  }
+  interface ISettingsStorage <<AbstractProduct>> {
+    + save(path : string, format : string) : bool
+    + load(path : string&, format : string&) : bool
+  }
+  class TxtTaskStorage <<ConcreteProduct>>
+  class CsvTaskStorage <<ConcreteProduct>>
+  class TxtSettingsStorage <<ConcreteProduct>>
+  class CsvSettingsStorage <<ConcreteProduct>>
+}
+IStorageFactory <|.. TxtStorageFactory
+IStorageFactory <|.. CsvStorageFactory
+ITaskStorage <|.. TxtTaskStorage
+ITaskStorage <|.. CsvTaskStorage
+ISettingsStorage <|.. TxtSettingsStorage
+ISettingsStorage <|.. CsvSettingsStorage
+IStorageFactory ..> ITaskStorage : создаёт
+IStorageFactory ..> ISettingsStorage : создаёт
+AppSettings --> IStorageFactory : хранит выбранное семейство
+@enduml
