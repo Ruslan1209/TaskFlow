@@ -128,7 +128,7 @@ public:
         int count = 0;
         while (getline(in, line)) {
             if (line.empty()) continue;
-            if (line[0] == 'т') continue; // строка заголовка
+            //if (line[0] == 'т') continue; // строка заголовка
             if (applyTaskLine(list, line)) ++count;
         }
         return count;
