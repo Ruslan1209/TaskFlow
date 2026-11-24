@@ -1,33 +1,25 @@
 
+
 @startuml 04_component
 title Компонентная диаграмма TaskFlow
 
 component "Консольное меню\n(main.cpp)" as Menu
 component "Ядро задач\n(TaskList, Task,\nSimpleTask, DeadlineTask,\nRecurringTask, TaskFactory)" as Core
 component "Поиск\n(TaskFilter)" as Search
-component "Хранилище\n(ITaskStorage, StorageFactory,\nTextStorage, CsvStorage)" as Storage
-component "Настройки\n(AppSettings, ISettingsStorage)" as Settings
+component "Хранилище\n(ITaskStorage, TxtTaskStorage,\nCsvTaskStorage)" as Storage
 
 interface "ITaskList" as IL
 interface "ITaskStorage" as IS
-interface "IStorageFactory" as ISF
-interface "ISettingsStorage" as ISS
 
 Core -up- IL : предоставляет
 Storage -up- IS : предоставляет
-Storage -up- ISF : предоставляет
-Settings -up- ISS : предоставляет
 
 Menu ..> IL : использует
 Search ..> IL : использует
-Menu ..> ISF : использует
 Menu ..> IS : использует
-Menu ..> ISS : использует
 
 note bottom of IS
-  save(tasks) : bool
-  load() : vector<Task>
+  save(list, path) : bool
+  load(list, path) : int
 end note
-note right of ISF
-  create(формат) : ITaskStorage
-end note
+@enduml
