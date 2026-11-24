@@ -225,7 +225,7 @@ int main() {
             break;
         }
         case 8: 
-            {
+        {
             // Поиск через TaskFilter: Enter — пропустить критерий
             TaskFilter f;
             bool any = false;
@@ -259,7 +259,6 @@ int main() {
                 }
             }
             break;
-        } 
         }    
         default: cout << "Нет такого пункта.\n";
         }
