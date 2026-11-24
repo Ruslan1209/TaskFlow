@@ -8,6 +8,7 @@
 #include "TaskFilter.h"
 #include "AppSettings.h"
 #include "TaskFactory.h"
+#include "TaskStorage.h"
 using namespace std;
 
 string readLine(const string& prompt) {
@@ -169,8 +170,34 @@ int main() {
             else cout << "Задача с номером " << id << " не найдена.\n";
             break;
         }
-        case 5: cout << "Сохранение появится в шаге 4 (форматы TXT/CSV).\n"; break;
-        case 6: cout << "Загрузка появится в шаге 4.\n"; break;
+        case 5: {
+            // формат и путь берутся из настроек — Singleton в действии
+            AppSettings& s = AppSettings::instance();
+            unique_ptr<ITaskStorage> st = makeStorage(s.getFormat());
+            if (st->save(list, s.getPathToFile()))
+                cout << "Сохранено в " << s.getPathToFile()
+                     << " (формат " << s.getFormat() << ").\n";
+            else
+                cout << "Не удалось открыть файл для записи: "
+                     << s.getPathToFile() << "\n";
+            break;
+        }
+        case 6: {
+            AppSettings& s = AppSettings::instance();
+            unique_ptr<ITaskStorage> st = makeStorage(s.getFormat());
+            if (!list.all().empty()) {
+                string a = readLine("Список не пуст. Загрузить вместо текущего? (y/n): ");
+                if (a != "y" && a != "Y" && a != "д" && a != "Д") break;
+            }
+            list.clear();
+            int n = st->load(list, s.getPathToFile());
+            if (n < 0)
+                cout << "Не удалось открыть файл: " << s.getPathToFile() << "\n";
+            else
+                cout << "Загружено задач: " << n
+                     << ". Номера пересчитаны заново.\n";
+            break;
+        }
         case 7: {
             // Singleton: всё через единственный экземпляр AppSettings
             AppSettings& s = AppSettings::instance();
