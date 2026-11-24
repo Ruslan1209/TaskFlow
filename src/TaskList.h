@@ -45,7 +45,7 @@ public:
         return false;
     }
 
-     void clear() { tasks.clear(); nextId = 1; } 
+     void clear() { tasks_.clear(); nextId = 1; } 
 
     int nextTaskId() const { return nextId; }                 // понадобится при загрузке (шаг 4)
     void bumpNextTaskId(int v) { if (v >= nextId) nextId = v + 1; }
