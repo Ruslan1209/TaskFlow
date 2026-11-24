@@ -174,13 +174,32 @@ class CsvStorageFactory {
   + createSettingsStorage() : unique_ptr<ISettingsStorage>
 }
 
+class Menu {
+  - running : bool
+  + run() : void
+  - showMenu() : void
+  - handleChoice(choice : int) : void
+}
+
+class TaskService {
+  - list : TaskList
+  + addTask(type : string, title : string, description : string, date : string, priority : Priority, tags : vector<string>, intervalDays : int) : int
+  + editTask(id : int, patch : const Task&) : bool
+  + removeTask(id : int) : bool
+  + all() : vector<Task*>
+  + findBy(filter : const TaskFilter&) : vector<Task*>
+  + save() : bool
+  + load() : int
+  + overdueToday() : vector<Task*>
+}
+
 Task <|-- SimpleTask
 Task <|-- DeadlineTask
 Task <|-- RecurringTask
 TaskCreator <|.. SimpleTaskCreator
 TaskCreator <|.. DeadlineTaskCreator
 TaskCreator <|.. RecurringTaskCreator
-TaskFactory o-- TaskCreator : реестр создателей
+TaskFactory *-- TaskCreator : реестр создателей
 TaskFactory ..> Task : создаёт
 SimpleTaskCreator ..> SimpleTask : создаёт
 DeadlineTaskCreator ..> DeadlineTask : создаёт
@@ -190,7 +209,7 @@ TaskList *-- Task : владеет задачами
 TaskList ..> TaskFilter : findBy()
 TaskFilter ..> Task : matches()
 
-AppSettings --> IStorageFactory : хранит выбранное семейство
+AppSettings o-- IStorageFactory : хранит выбранное семейство
 IStorageFactory <|.. TxtStorageFactory
 IStorageFactory <|.. CsvStorageFactory
 ITaskStorage <|.. TxtTaskStorage
@@ -204,4 +223,10 @@ ITaskStorage ..> TaskFactory : восстанавливает по типу
 Task ..> Priority
 Task ..> Status
 TaskFilter ..> Priority
+
+Menu --> TaskService : работает через
+TaskService *-- TaskList : владеет списком
+TaskService ..> TaskFactory : создаёт задачи
+TaskService ..> AppSettings : путь и формат
+TaskService ..> TaskFilter : findBy()
 @enduml
