@@ -1,79 +1,13 @@
 #ifndef STORAGEFACTORY_H
 #define STORAGEFACTORY_H
 #include <string>
-#include <fstream>
-#include <sstream>
 #include <memory>
 #include "TaskStorage.h"
+#include "SettingsStorage.h"
 using namespace std;
 
-// --- второй продукт семейства: хранилище настроек ---
-// оба семейства пишут в один файл settings.txt, но разметка своя:
-// txt — строки «ключ значение», csv — заголовок и разделитель ';'
-
-class ISettingsStorage {
-public:
-    virtual ~ISettingsStorage() {}
-    virtual bool save(const string& path, const string& format) const = 0;
-    virtual bool load(string& path, string& format) const = 0;
-};
-
-class TxtSettingsStorage : public ISettingsStorage {
-public:
-    bool save(const string& path, const string& format) const {
-        ofstream out("settings.txt");
-        if (!out) return false;
-        out << "path " << path << "\nformat " << format << "\n";
-        return true;
-    }
-    // возвращает true, только если нашёл знакомые ключи —
-    // тогда csv-разметку читать не нужно
-    bool load(string& path, string& format) const {
-        ifstream in("settings.txt");
-        if (!in) return false;
-        bool found = false;
-        string line;
-        while (getline(in, line)) {
-            size_t sp = line.find(' ');
-            if (sp == string::npos) continue;
-            string key = line.substr(0, sp), value = line.substr(sp + 1);
-            if (key == "path") { path = value; found = true; }
-            else if (key == "format") { format = value; found = true; }
-        }
-        return found;
-    }
-};
-
-class CsvSettingsStorage : public ISettingsStorage {
-public:
-    bool save(const string& path, const string& format) const {
-        ofstream out("settings.txt");
-        if (!out) return false;
-        out << "ключ;значение\n";
-        out << "path;" << path << "\n";
-        out << "format;" << format << "\n";
-        return true;
-    }
-    bool load(string& path, string& format) const {
-        ifstream in("settings.txt");
-        if (!in) return false;
-        bool found = false;
-        string line;
-        while (getline(in, line)) {
-            istringstream iss(line);
-            string key, value;
-            if (!getline(iss, key, ';')) continue;
-            if (!getline(iss, value)) continue;
-            if (key == "path") { path = value; found = true; }
-            else if (key == "format") { format = value; found = true; }
-        }
-        return found;
-    }
-};
-
-// --- Abstract Factory: семейство «формат хранения» ---
-// txt-семейство: TxtTaskStorage + TxtSettingsStorage
-// csv-семейство: CsvTaskStorage + CsvSettingsStorage
+// Abstract Factory: одно семейство — хранилище задач,
+// второе — хранилище настроек. Фабрика создаёт обоих.
 class IStorageFactory {
 public:
     virtual ~IStorageFactory() {}
@@ -104,11 +38,15 @@ public:
     }
 };
 
-// выбор семейства по формату
-inline unique_ptr<IStorageFactory> makeStorageFactory(const string& format) {
-    if (format == "csv")
-        return unique_ptr<IStorageFactory>(new CsvStorageFactory());
-    return unique_ptr<IStorageFactory>(new TxtStorageFactory());
-}
+// старое удобное имя сохранено: выбор хранилища по строке формата,
+// чтобы main.cpp не пришлось переписывать
+inline unique_ptr<ITaskStorage> makeStorage(const string& format) {
+    if (format == "csv") {
+        CsvStorageFactory f;
+        return f.createTaskStorage();
+    }
+    TxtStorageFactory f;
+    return f.createTaskStorage();
+    }
 
 #endif // STORAGEFACTORY_H
