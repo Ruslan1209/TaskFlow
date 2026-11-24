@@ -171,9 +171,9 @@ int main() {
             break;
         }
         case 5: {
-            // формат и путь берутся из настроек — Singleton в действии
+            // Abstract Factory: хранилище задач из семейства настроек
             AppSettings& s = AppSettings::instance();
-            unique_ptr<ITaskStorage> st = makeStorage(s.getFormat());
+            unique_ptr<ITaskStorage> st = s.factory().createTaskStorage();
             if (st->save(list, s.getPathToFile()))
                 cout << "Сохранено в " << s.getPathToFile()
                      << " (формат " << s.getFormat() << ").\n";
@@ -184,7 +184,7 @@ int main() {
         }
         case 6: {
             AppSettings& s = AppSettings::instance();
-            unique_ptr<ITaskStorage> st = makeStorage(s.getFormat());
+            unique_ptr<ITaskStorage> st = s.factory().createTaskStorage();
             if (!list.all().empty()) {
                 string a = readLine("Список не пуст. Загрузить вместо текущего? (y/n): ");
                 if (a != "y" && a != "Y" && a != "д" && a != "Д") break;
