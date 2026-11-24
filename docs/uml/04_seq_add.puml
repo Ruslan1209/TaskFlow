@@ -1,32 +1,33 @@
 @startuml 04_seq_add
 title Диаграмма последовательности: "Добавить задачу"
 
-actor Пользователь as User
-participant ":Menu" as M
-participant ":TaskService" as S
-participant ":TaskList" as L
+actor Пользователь as U
+participant ":Menu\n(main.cpp)" as M
+participant "f: TaskFactory" as F
 participant "t: Task" as T
+participant ":TaskList" as L
+participant "s: ITaskStorage" as S
 
-User -> M : выбрать пункт "Добавить задачу"
+U -> M : выбрать пункт «Добавить задачу»
 activate M
-M -> M : readInput(title, priority)
-M -> S : addTask(title, priority)
-activate S
-
-S -> S : validate(title, priority)
-alt [данные верные: заголовок не пуст, 1 <= priority <= 3]
-  create T
-  S -> T : <<create>> Task(title, priority)
-  S -> L : add(t)
+M -> M : ввод названия, типа, описания,\nдаты, приоритета, тегов
+alt [данные верные: название не пустое,\nприоритет 1..3, дата в формате ДД.ММ.ГГГГ]
+  M -> F : create(тип)
+  F --> M : t : Task
+  M -> T : setTitle(название)
+  M -> T : setDescription(описание)
+  M -> T : setDate(дата)
+  M -> T : setPriority(приоритет)
+  M -> T : setTags(теги)
+  M -> L : addTask(t)
   activate L
-  L --> S : ok
+  L --> M : задача принята
   deactivate L
-  S --> M : результат = true
-else [данные неверные: пустой заголовок]
-  S --> M : результат = false
+  M -> S : save(список, путь к файлу)
+  S --> M : истина
+  M --> U : «Задача создана, номер N»
+else [ошибка: пустое название]
+  M --> U : «Ошибка: название не может быть пустым»
 end
-
-M --> User : "Задача добавлена" / "Ошибка: пустой заголовок"
-deactivate S
 deactivate M
 @enduml
