@@ -224,27 +224,30 @@ int main() {
             }
             break;
         }
-           case 8: {
+        case 8: 
+            {
             // Поиск через TaskFilter: Enter — пропустить критерий
             TaskFilter f;
+            bool any = false;
             string s = readLine("Тег для поиска (Enter — пропустить): ");
-            if (!s.empty()) f.setTag(s);
+            if (!s.empty()) { f.setTag(s); any = true; }
             s = readLine("Дата для поиска ГГГГ-ММ-ДД (Enter — пропустить): ");
             if (!s.empty()) {
                 if (!isValidDate(s)) {
                     cout << "Дата неверная, поиск по дате пропущен.\n";
                 } else {
                     f.setDate(s);
+                    any = true;
                 }
             }
             s = readLine("Приоритет 1-высокий, 2-средний, 3-низкий (Enter — пропустить): ");
             if (!s.empty()) {
-                if (s == "1") f.setPriority(Priority::High);
-                else if (s == "2") f.setPriority(Priority::Medium);
-                else if (s == "3") f.setPriority(Priority::Low);
+                if (s == "1") { f.setPriority(Priority::High); any = true; }
+                else if (s == "2") { f.setPriority(Priority::Medium); any = true; }
+                else if (s == "3") { f.setPriority(Priority::Low); any = true; }
                 else cout << "Приоритет не понял, поиск по приоритету пропущен.\n";
             }
-            if (!f.getTag().empty() && f.getDate().empty() && !f.prioritySet())
+            if (!any)
                 cout << "Задайте хотя бы один критерий.\n";
             else {
                 vector<Task*> found = list.findBy(f);
@@ -256,6 +259,7 @@ int main() {
                 }
             }
             break;
+        } 
         }    
         default: cout << "Нет такого пункта.\n";
         }
