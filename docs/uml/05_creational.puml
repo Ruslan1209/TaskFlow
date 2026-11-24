@@ -1,4 +1,7 @@
-@startuml
+
+@startuml 05_creational
+title Порождающие паттерны TaskFlow: Singleton, Factory Method, Abstract Factory
+
 hide circle
 skinparam classAttributeIconSize 0
 
@@ -64,6 +67,9 @@ TaskCreator <|.. SimpleTaskCreator
 TaskCreator <|.. DeadlineTaskCreator
 TaskCreator <|.. RecurringTaskCreator
 TaskCreator ..> Task : создаёт
+SimpleTaskCreator ..> SimpleTask : создаёт
+DeadlineTaskCreator ..> DeadlineTask : создаёт
+RecurringTaskCreator ..> RecurringTask : создаёт
 TaskFactory o-- TaskCreator : реестр создателей
 TaskFactory ..> Task : создаёт по имени типа
 
@@ -105,5 +111,9 @@ ISettingsStorage <|.. TxtSettingsStorage
 ISettingsStorage <|.. CsvSettingsStorage
 IStorageFactory ..> ITaskStorage : создаёт
 IStorageFactory ..> ISettingsStorage : создаёт
+TxtStorageFactory ..> TxtTaskStorage : создаёт
+TxtStorageFactory ..> TxtSettingsStorage : создаёт
+CsvStorageFactory ..> CsvTaskStorage : создаёт
+CsvStorageFactory ..> CsvSettingsStorage : создаёт
 AppSettings --> IStorageFactory : хранит выбранное семейство
 @enduml
