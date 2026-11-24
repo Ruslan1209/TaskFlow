@@ -1,4 +1,4 @@
-[README (1).md](https://github.com/user-attachments/files/35372501/README.1.md)
+[README.md](https://github.com/user-attachments/files/35372501/README.1.md)
 
 # TaskFlow — менеджер задач на C++
 
