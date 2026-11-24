@@ -53,24 +53,24 @@ inline bool applyTaskLine(TaskList& list, const string& line) {
     if (f.size() < 9) return false;
     unique_ptr<Task> t = TaskFactory::instance().create(f[0]);
     if (!t) return false;
-    t->setTitle(f[1]);
-    t->setDescription(f[2]);
-    t->setDate(f[3]);
-    int p = parseIntSafe(f[4]);
+    t->setTitle(f[2]);
+    t->setDescription(f[3]);
+    t->setDate(f[4]);
+    int p = parseIntSafe(f[5]);
     if (p >= 1 && p <= 3)
         t->setPriority(p == 1 ? Priority::High :
                        p == 2 ? Priority::Medium : Priority::Low);
-    int st = parseIntSafe(f[5]);
+    int st = parseIntSafe(f[6]);
     t->setStatus(st == 1 ? Status::InProgress :
                  st == 2 ? Status::Done : Status::New);
     if (t->typeName() == "повторяющаяся") {
         RecurringTask* r = dynamic_cast<RecurringTask*>(t.get());
-        if (r) r->setInterval(parseIntSafe(f[6]));
+        if (r) r->setInterval(parseIntSafe(f[7]));
     }
     vector<string> tags;
     {
         string part;
-        istringstream tagIss(f[7]);
+        istringstream tagIss(f[8]);
         while (getline(tagIss, part, ','))
             if (!part.empty()) tags.push_back(part);
     }
@@ -128,7 +128,6 @@ public:
         int count = 0;
         while (getline(in, line)) {
             if (line.empty()) continue;
-            //if (line[0] == 'т') continue; // строка заголовка
             if (applyTaskLine(list, line)) ++count;
         }
         return count;
