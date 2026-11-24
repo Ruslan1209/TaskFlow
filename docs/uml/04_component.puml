@@ -9,7 +9,6 @@ component "Хранилище\n(ITaskStorage, TxtTaskStorage,\nCsvTaskStorage)" 
 interface "ITaskList" as IL
 interface "ITaskStorage" as IS
 
-
 Core -up- IL : предоставляет
 Storage -up- IS : предоставляет
 
