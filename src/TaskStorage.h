@@ -133,12 +133,4 @@ public:
         return count;
     }
 };
-
-// выбор хранилища по формату из настроек
-inline unique_ptr<ITaskStorage> makeStorage(const string& format) {
-    if (format == "csv")
-        return unique_ptr<ITaskStorage>(new CsvTaskStorage());
-    return unique_ptr<ITaskStorage>(new TxtTaskStorage());
-}
-
 #endif // TASKSTORAGE_H
