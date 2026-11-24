@@ -1,33 +1,31 @@
+
 @startuml
 title Последовательность «Добавить задачу»
 
 participant "user : User" as u
-participant "list : TaskList" as list
+participant "main : Программа" as app
+participant "factory : TaskFactory" as factory
 participant "task : Task" as task
-participant "storage : CsvTaskStorage" as storage
+participant "list : TaskList" as list
 
-u -> list : addTask(task)
+u -> app : выбрать «Добавить задачу», тип
+app -> factory : create(type)
+activate factory
+factory --> app : task : Task
+deactivate factory
+
+u -> app : название, описание, приоритет, дата, теги
+app -> task : setTitle(title)
+app -> task : setDescription(description)
+app -> task : setPriority(priority)
+app -> task : setDate(date)
+app -> task : setTags(tags)
+
+app -> list : addTask(task)
 activate list
-list -> task : setTitle(title)
-activate task
-task --> list : ок
-deactivate task
-list -> task : setDate(date)
-activate task
-task --> list : ок
-deactivate task
-list -> task : setPriority(priority)
-activate task
-task --> list : ок
-deactivate task
-list -> task : setStatus(NEW)
-activate task
-task --> list : ок
-deactivate task
-list -> storage : save(tasks)
-activate storage
-storage --> list : true
-deactivate storage
-list --> u : true
+list -> task : setId(nextId)
+list --> app : номер задачи
 deactivate list
+
+app --> u : «Задача создана, номер N»
 @enduml
