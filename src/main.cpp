@@ -127,7 +127,7 @@ int main() {
             } else if (t->typeName() == "со сроком") {
                 t->setDate(dateInput("Дата дедлайна (ГГГГ-ММ-ДД): ", ""));
             } else {
-                t->setDate("");
+                t->setDate(dateInput("Дата (ГГГГ-ММ-ДД): ", ""));
             }
             t->setTags(splitTags(readLine("Теги через запятую: ")));
             int id = list.addTask(move(t));
