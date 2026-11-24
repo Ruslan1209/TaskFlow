@@ -30,13 +30,12 @@ public:
     }
 
     Task* find(int id) {
-        for (auto& up : tasks_)
-            if (up->getId() == id) return up.get();
+        for (size_t i = 0; i < tasks_.size(); ++i)
+            if (tasks_[i]->getId() == id) return tasks_[i].get();
         return nullptr;
     }
 
-    bool removeTask(int id) 
-    {
+    bool removeTask(int id) {
         for (size_t i = 0; i < tasks_.size(); ++i)
             if (tasks_[i]->getId() == id) {
                 tasks_.erase(tasks_.begin() + i);
@@ -45,23 +44,24 @@ public:
         return false;
     }
 
-     void clear() { tasks_.clear(); nextId = 1; } 
+    // полная очистка списка перед загрузкой из файла (шаг 4)
+    void clear() { tasks_.clear(); nextId = 1; }
 
-    int nextTaskId() const { return nextId; }                 // понадобится при загрузке (шаг 4)
+    int nextTaskId() const { return nextId; }
     void bumpNextTaskId(int v) { if (v >= nextId) nextId = v + 1; }
 
     const vector<unique_ptr<Task>>& all() const { return tasks_; }
 
     vector<Task*> findBy(const TaskFilter& filter) const {
         vector<Task*> result;
-        for (const auto& up : tasks_)
-            if (filter.matches(*up)) result.push_back(up.get());
+        for (size_t i = 0; i < tasks_.size(); ++i)
+            if (filter.matches(*tasks_[i])) result.push_back(tasks_[i].get());
         return result;
     }
 
     vector<Task*> sortedByDate() const {
         vector<Task*> result;
-        for (const auto& up : tasks_) result.push_back(up.get());
+        for (size_t i = 0; i < tasks_.size(); ++i) result.push_back(tasks_[i].get());
         for (size_t i = 0; i + 1 < result.size(); ++i)
             for (size_t j = 0; j + 1 < result.size() - i; ++j)
                 if (result[j]->getDate() > result[j + 1]->getDate())
