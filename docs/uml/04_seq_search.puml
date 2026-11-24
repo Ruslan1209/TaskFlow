@@ -7,6 +7,7 @@ participant "f: TaskFilter" as F
 participant ":TaskList" as L
 participant "t: Task" as T
 
+
 U -> M : выбрать пункт «Найти задачи»
 activate M
 M -> M : ввод слова поиска
