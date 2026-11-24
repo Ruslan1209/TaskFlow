@@ -1,0 +1,8 @@
+
+# Карта паттернов проекта TaskFlow
+
+| Паттерн | Категория | Классы (роль → класс) | Какую проблему решает | Что было бы без него |
+|---|---|---|---|---|
+| Singleton | порождающий | Singleton → AppSettings; Singleton → TaskFactory | Гарантирует ровно один экземпляр настроек и фабрики задач на всю программу и даёт общую точку доступа к ним | Каждый кусок кода заводил бы свои настройки: путь к файлу и формат расходились бы между пунктами меню, задачи создавались бы с разными реестрами типов |
+| Factory Method | порождающий | Creator → TaskCreator; ConcreteCreator → SimpleTaskCreator, DeadlineTaskCreator, RecurringTaskCreator; Product → Task; ConcreteProduct → SimpleTask, DeadlineTask, RecurringTask | Создание задачи нужного типа по строке-имени без привязки вызывающего кода к конкретным классам задач | В меню стоял бы длинный if/else с new для каждого типа: добавление нового типа задачи правило бы main.cpp и рисковало сломать уже работающий код |
+| Abstract Factory | порождающий | AbstractFactory → IStorageFactory; ConcreteFactory → TxtSt
