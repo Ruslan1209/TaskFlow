@@ -18,6 +18,7 @@ activate L
 L --> M : список всех задач
 deactivate L
 
+
 loop [по каждой задаче t из списка]
   M -> F : matches(t)
   activate F
