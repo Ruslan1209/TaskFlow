@@ -6,6 +6,7 @@
 #include "Task.h"
 #include "TaskList.h"
 #include "TaskFilter.h"
+#include "AppSettings.h"
 using namespace std;
 
 string readLine(const string& prompt) {
@@ -100,7 +101,7 @@ int main() {
                 if (!title.empty()) break;
                 cout << "Название не может быть пустым.\n";
             }
-            unique_ptr<Task> t = make_unique<Task>();
+            unique_ptr<Task> t(new Task());   // без make_unique — работает и без C++17
             t->setTitle(title);
             t->setDescription(readLine("Описание: "));
             t->setPriority(readPriority("Приоритет"));
@@ -113,7 +114,7 @@ int main() {
         case 2: {
             const vector<unique_ptr<Task>>& all = list.all();
             if (all.empty()) { cout << "Список пуст.\n"; break; }
-            for (const auto& up : all) printTask(up.get());
+            for (size_t i = 0; i < all.size(); ++i) printTask(all[i].get());
             break;
         }
         case 3: {
@@ -147,11 +148,35 @@ int main() {
         }
         case 5: cout << "Сохранение появится в шаге 4 (форматы TXT/CSV).\n"; break;
         case 6: cout << "Загрузка появится в шаге 4.\n"; break;
-        case 7: cout << "Настройки появятся в шаге 2 (Singleton).\n"; break;
+        case 7: {
+            // Singleton: всё через единственный экземпляр AppSettings
+            AppSettings& s = AppSettings::instance();
+            cout << "\nНастройки. Текущий формат: " << s.getFormat()
+                 << " | путь к файлу: " << s.getPathToFile() << "\n";
+            int what = readInt("1-сменить формат 2-сменить путь 0-назад: ");
+            if (what == 1) {
+                string f = readLine("Новый формат (txt или csv): ");
+                if (f == "txt" || f == "csv") {
+                    s.setFormat(f);
+                    cout << "Формат изменён на " << f << ".\n";
+                } else {
+                    cout << "Неверный формат, допустимы только txt и csv. "
+                            "Настройка не изменена.\n";
+                }
+            } else if (what == 2) {
+                string p = readLine("Новый путь к файлу: ");
+                if (!p.empty()) {
+                    s.setPathToFile(p);
+                    cout << "Путь изменён.\n";
+                } else {
+                    cout << "Путь не может быть пустым.\n";
+                }
+            }
+            break;
+        }
         default: cout << "Нет такого пункта.\n";
         }
     }
     cout << "Пока!\n";
-    return 0;
 }
 
