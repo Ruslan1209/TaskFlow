@@ -1,3 +1,4 @@
+
 #ifndef SETTINGSSTORAGE_H
 #define SETTINGSSTORAGE_H
 #include <string>
@@ -6,9 +7,9 @@
 #include "TaskStorage.h"
 using namespace std;
 
-// абстрактный продукт второго семейства: файл настроек.
-// Файл настроек всегда называется settings.txt и хранит две величины:
-// путь к файлу задач и формат (txt/csv) — одну строкой: путь;формат
+// второе семейство продуктов: хранилище настроек.
+// Файл настроек всегда называется settings.txt и хранит одну строку:
+// путь к файлу задач;формат
 class ISettingsStorage {
 public:
     virtual ~ISettingsStorage() {}
@@ -42,7 +43,7 @@ public:
 
 class CsvSettingsStorage : public ISettingsStorage {
 public:
-    // файл настроек маленький, формат строки тот же — разделитель ';'
+    // файл настроек маленький, поэтому формат строки тот же — разделитель ';'
     bool save(const string& taskPath, const string& format) const {
         ofstream out("settings.txt");
         if (!out) return false;
