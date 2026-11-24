@@ -7,10 +7,11 @@ participant "f: TaskFilter" as F
 participant ":TaskList" as L
 participant "t: Task" as T
 
-
 U -> M : выбрать пункт «Найти задачи»
 activate M
-M -> M : ввод слова поиска
+M -> M : ввод критерия поиска
+M -> F : <<create>> TaskFilter
+M -> F : setTag(тег) / setDate(дата) /\nsetPriority(приоритет)
 
 M -> L : all()
 activate L
@@ -18,15 +19,23 @@ L --> M : список всех задач
 deactivate L
 
 loop [по каждой задаче t из списка]
-  M -> F : filter(t, слово поиска)
+  M -> F : matches(t)
   activate F
-  F -> T : getTitle(), getStatus(), getTags()
-  T --> F : значения полей
+  alt [задан тег]
+    F -> T : matchesTag(tag)
+    T --> F : истина / ложь
+  end
+  alt [задана дата]
+    F -> T : matchesDate(date)
+    T --> F : истина / ложь
+  end
+  alt [задан приоритет]
+    F -> T : matchesPriority(priority)
+    T --> F : истина / ложь
+  end
   F --> M : истина / ложь
   deactivate F
-  alt [фильтр вернул истину — задача подходит]
-    M -> M : добавить t в результаты
-  end
+  M -> M : [matches = истина] добавить t в результаты
 end
 
 alt [результаты не пусты — задачи найдены]
