@@ -13,6 +13,7 @@ activate factory
 factory --> app : task : Task
 deactivate factory
 
+
 u -> app : название, описание, приоритет, дата, теги
 app -> task : setTitle(title)
 app -> task : setDescription(description)
