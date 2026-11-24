@@ -7,6 +7,7 @@
 #include "TaskList.h"
 #include "TaskFilter.h"
 #include "AppSettings.h"
+#include "TaskFactory.h"
 using namespace std;
 
 string readLine(const string& prompt) {
@@ -74,6 +75,7 @@ vector<string> splitTags(const string& line) {
 void printTask(const Task* t) {
     cout << "#" << t->getId() << " [" << statusName(t->getStatus()) << "] "
          << t->getTitle()
+         << " | тип: " << t->typeName()
          << " | приоритет: " << priorityName(t->getPriority())
          << " | срок: " << t->getDate();
     if (!t->getDescription().empty()) cout << " | " << t->getDescription();
@@ -83,6 +85,7 @@ void printTask(const Task* t) {
         for (size_t i = 0; i < tg.size(); ++i)
             cout << tg[i] << (i + 1 < tg.size() ? ", " : "");
     }
+    if (!t->extraInfo().empty()) cout << " | " << t->extraInfo();
     cout << "\n";
 }
 
@@ -95,17 +98,36 @@ int main() {
         if (cmd == 0) break;
         switch (cmd) {
         case 1: {
+            // Factory Method: тип задачи выбирается через реестр создателей
+            vector<string> types = TaskFactory::instance().typeNames();
+            cout << "Тип задачи:\n";
+            for (size_t i = 0; i < types.size(); ++i)
+                cout << "  " << (i + 1) << "-" << types[i] << "\n";
+            int tt = readInt("Тип: ");
+            if (tt < 1 || tt > (int)types.size()) {
+                cout << "Нет такого типа.\n";
+                break;
+            }
+            unique_ptr<Task> t = TaskFactory::instance().create(types[tt - 1]);
+            if (!t) { cout << "Не удалось создать задачу.\n"; break; }
             string title;
             while (true) {
                 title = readLine("Название: ");
                 if (!title.empty()) break;
                 cout << "Название не может быть пустым.\n";
             }
-            unique_ptr<Task> t(new Task());   // без make_unique — работает и без C++17
             t->setTitle(title);
             t->setDescription(readLine("Описание: "));
             t->setPriority(readPriority("Приоритет"));
-            t->setDate(dateInput("Дата (ГГГГ-ММ-ДД): ", ""));
+            if (t->typeName() == "повторяющаяся") {
+                RecurringTask* r = dynamic_cast<RecurringTask*>(t.get());
+                if (r) r->setInterval(readInt("Повторять каждые сколько дней: "));
+                t->setDate(dateInput("Дата первого выполнения (ГГГГ-ММ-ДД): ", ""));
+            } else if (t->typeName() == "со сроком") {
+                t->setDate(dateInput("Дата дедлайна (ГГГГ-ММ-ДД): ", ""));
+            } else {
+                t->setDate("");
+            }
             t->setTags(splitTags(readLine("Теги через запятую: ")));
             int id = list.addTask(move(t));
             cout << "Задача создана, номер " << id << ".\n";
@@ -134,7 +156,8 @@ int main() {
                 else if (s == "3") t->setPriority(Priority::Low);
                 else cout << "Приоритет не понял, оставляю старый.\n";
             }
-            t->setDate(dateInput("Дата [" + t->getDate() + "]: ", t->getDate()));
+            if (t->typeName() != "обычная")
+                t->setDate(dateInput("Дата [" + t->getDate() + "]: ", t->getDate()));
             s = readLine("Теги через запятую (Enter — оставить): ");
             if (!s.empty()) t->setTags(splitTags(s));
             cout << "Задача обновлена.\n";
@@ -179,4 +202,3 @@ int main() {
     }
     cout << "Пока!\n";
 }
-
