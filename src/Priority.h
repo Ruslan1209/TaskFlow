@@ -3,13 +3,20 @@
 #include <string>
 using namespace std;
 
-enum class Priority { Low, Medium, High };
+enum class Priority { High = 1, Medium = 2, Low = 3 };
 
 inline string priorityName(Priority p) {
-    switch (p) {
-        case Priority::High:   return "высокий";
-        case Priority::Medium: return "средний";
-        default:               return "низкий";
-    }
+    if (p == Priority::High) return "высокий";
+    if (p == Priority::Medium) return "средний";
+    return "низкий";
 }
+
+enum class Status { New, InProgress, Done };
+
+inline string statusName(Status s) {
+    if (s == Status::New) return "Новая";
+    if (s == Status::InProgress) return "В работе";
+    return "Готова";
+}
+
 #endif // PRIORITY_H
