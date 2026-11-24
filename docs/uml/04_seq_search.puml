@@ -1,40 +1,37 @@
 @startuml 04_seq_search
 title Диаграмма последовательности: "Найти задачи"
 
-actor Пользователь as User
-participant ":Menu" as M
-participant ":TaskService" as S
+actor Пользователь as U
+participant ":Menu\n(main.cpp)" as M
+participant "f: TaskFilter" as F
 participant ":TaskList" as L
 participant "t: Task" as T
 
-User -> M : выбрать пункт "Найти задачи"
+U -> M : выбрать пункт «Найти задачи»
 activate M
-M -> M : readInput(keyword)
-M -> S : findTasks(keyword)
-activate S
+M -> M : ввод слова поиска
 
-S -> L : getAll()
+M -> L : all()
 activate L
-L --> S : vector<Task*>
+L --> M : список всех задач
 deactivate L
 
 loop [по каждой задаче t из списка]
-  S -> T : matches(keyword)
-  activate T
-  T --> S : true / false
-  deactivate T
-  alt [matches = true]
-    S -> S : results.push_back(t)
+  M -> F : filter(t, слово поиска)
+  activate F
+  F -> T : getTitle(), getStatus(), getTags()
+  T --> F : значения полей
+  F --> M : истина / ложь
+  deactivate F
+  alt [фильтр вернул истину — задача подходит]
+    M -> M : добавить t в результаты
   end
 end
 
-alt [results не пуст — задачи найдены]
-  S --> M : results
-else [results пуст — ничего не найдено]
-  S --> M : пустой список
+alt [результаты не пусты — задачи найдены]
+  M --> U : «Найдено N задач» + список
+else [результаты пусты]
+  M --> U : «Ничего не найдено»
 end
-
-M --> User : "Найдено N задач: ..." / "Ничего не найдено"
-deactivate S
 deactivate M
 @enduml
