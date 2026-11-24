@@ -157,6 +157,14 @@ int main() {
                 else if (s == "3") t->setPriority(Priority::Low);
                 else cout << "Приоритет не понял, оставляю старый.\n";
             }
+            s = readLine("Статус 1-новая, 2-в работе, 3-выполнена [" +
+                         statusName(t->getStatus()) + "] (Enter — оставить): ");
+            if (!s.empty()) {
+                if (s == "1") t->setStatus(Status::New);
+                else if (s == "2") t->setStatus(Status::InProgress);
+                else if (s == "3") t->setStatus(Status::Done);
+                else cout << "Статус не понял, оставляю старый.\n";
+            }
             if (t->typeName() != "обычная")
                 t->setDate(dateInput("Дата [" + t->getDate() + "]: ", t->getDate()));
             s = readLine("Теги через запятую (Enter — оставить): ");
