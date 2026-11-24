@@ -4,6 +4,7 @@
 #include <vector>
 #include <memory>
 #include "Task.h"
+#include "Tasks.h" 
 using namespace std;
 
 // Creator интерфейс паттерна Factory Method
