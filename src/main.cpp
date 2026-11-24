@@ -94,7 +94,7 @@ int main() {
     TaskList list;
     while (true) {
         cout << "\n1-добавить 2-показать все 3-изменить 4-удалить "
-                "5-сохранить 6-загрузить 7-настройки 0-выход\n";
+                "5-сохранить 6-загрузить 7-настройки 8-поиск 0-выход\n";
         int cmd = readInt("Ваш выбор: ");
         if (cmd == 0) break;
         switch (cmd) {
@@ -224,6 +224,39 @@ int main() {
             }
             break;
         }
+           case 8: {
+            // Поиск через TaskFilter: Enter — пропустить критерий
+            TaskFilter f;
+            string s = readLine("Тег для поиска (Enter — пропустить): ");
+            if (!s.empty()) f.setTag(s);
+            s = readLine("Дата для поиска ГГГГ-ММ-ДД (Enter — пропустить): ");
+            if (!s.empty()) {
+                if (!isValidDate(s)) {
+                    cout << "Дата неверная, поиск по дате пропущен.\n";
+                } else {
+                    f.setDate(s);
+                }
+            }
+            s = readLine("Приоритет 1-высокий, 2-средний, 3-низкий (Enter — пропустить): ");
+            if (!s.empty()) {
+                if (s == "1") f.setPriority(Priority::High);
+                else if (s == "2") f.setPriority(Priority::Medium);
+                else if (s == "3") f.setPriority(Priority::Low);
+                else cout << "Приоритет не понял, поиск по приоритету пропущен.\n";
+            }
+            if (!f.getTag().empty() && f.getDate().empty() && !f.prioritySet())
+                cout << "Задайте хотя бы один критерий.\n";
+            else {
+                vector<Task*> found = list.findBy(f);
+                if (found.empty())
+                    cout << "Ничего не найдено.\n";
+                else {
+                    cout << "Найдено задач: " << found.size() << "\n";
+                    for (size_t i = 0; i < found.size(); ++i) printTask(found[i]);
+                }
+            }
+            break;
+        }    
         default: cout << "Нет такого пункта.\n";
         }
     }
