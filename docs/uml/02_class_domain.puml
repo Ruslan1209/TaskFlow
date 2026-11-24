@@ -1,4 +1,6 @@
-@startuml
+@startuml 02_class_domain
+title TaskFlow: диаграмма классов (домен и порождающие паттерны)
+
 hide circle
 skinparam classAttributeIconSize 0
 
@@ -89,12 +91,14 @@ class TaskList {
   - tasks_ : vector<unique_ptr<Task>>
   - nextId : int
   + addTask(task : unique_ptr<Task>) : int
-  + editTask(id : int, patch : Task) : bool
+  + editTask(id : int, patch : const Task&) : bool
   + find(id : int) : Task*
   + removeTask(id : int) : bool
   + clear() : void
-  + all() : vector<unique_ptr<Task>>&
-  + findBy(filter : TaskFilter) : vector<Task*>
+  + nextTaskId() : int
+  + bumpNextTaskId(v : int) : void
+  + all() : const vector<unique_ptr<Task>>&
+  + findBy(filter : const TaskFilter&) : vector<Task*>
   + sortedByDate() : vector<Task*>
 }
 
@@ -106,7 +110,7 @@ class TaskFilter {
   + setTag(tag : string) : void
   + setDate(date : string) : void
   + setPriority(p : Priority) : void
-  + matches(task : Task) : bool
+  + matches(task : const Task&) : bool
 }
 
 class AppSettings <<Singleton>> {
@@ -178,6 +182,9 @@ TaskCreator <|.. DeadlineTaskCreator
 TaskCreator <|.. RecurringTaskCreator
 TaskFactory o-- TaskCreator : реестр создателей
 TaskFactory ..> Task : создаёт
+SimpleTaskCreator ..> SimpleTask : создаёт
+DeadlineTaskCreator ..> DeadlineTask : создаёт
+RecurringTaskCreator ..> RecurringTask : создаёт
 
 TaskList *-- Task : владеет задачами
 TaskList ..> TaskFilter : findBy()
