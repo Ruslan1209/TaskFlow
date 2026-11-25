@@ -55,27 +55,27 @@ class DeadlineTask {
 }
 
 class RecurringTask {
-  - intervalDays : int
+  - intervalDays_ : int
   + getInterval() : int
   + setInterval(n : int) : void
   + typeName() : string
   + extraInfo() : string
 }
 
-interface TaskCreator <<Factory Method>> {
+interface TaskCreator <<Creator>> {
   + typeName() : string
   + create() : unique_ptr<Task>
 }
 
-class SimpleTaskCreator {
+class SimpleTaskCreator <<ConcreteCreator>> {
   + create() : unique_ptr<Task>
 }
 
-class DeadlineTaskCreator {
+class DeadlineTaskCreator <<ConcreteCreator>> {
   + create() : unique_ptr<Task>
 }
 
-class RecurringTaskCreator {
+class RecurringTaskCreator <<ConcreteCreator>> {
   + create() : unique_ptr<Task>
 }
 
@@ -124,39 +124,41 @@ class AppSettings <<Singleton>> {
   + setPathToFile(p : string) : void
   + setFormat(f : string) : void
   + factory() : IStorageFactory&
+  + saveSettings() : bool
+  + loadSettings() : bool
 }
 
 interface ITaskStorage {
-  + save(list : const TaskList&, path : string) : bool
-  + load(list : TaskList&, path : string) : int
+  + save(list : const TaskList&, path : const string&) : bool
+  + load(list : TaskList&, path : const string&) : int
 }
 
 class TxtTaskStorage {
-  + save(list : const TaskList&, path : string) : bool
-  + load(list : TaskList&, path : string) : int
+  + save(list : const TaskList&, path : const string&) : bool
+  + load(list : TaskList&, path : const string&) : int
 }
 
 class CsvTaskStorage {
-  + save(list : const TaskList&, path : string) : bool
-  + load(list : TaskList&, path : string) : int
+  + save(list : const TaskList&, path : const string&) : bool
+  + load(list : TaskList&, path : const string&) : int
 }
 
 interface ISettingsStorage {
-  + save(path : string, format : string) : bool
-  + load(path : string&, format : string&) : bool
+  + save(taskPath : const string&, format : const string&) : bool
+  + load(taskPath : string&, format : string&) : bool
 }
 
 class TxtSettingsStorage {
-  + save(path : string, format : string) : bool
-  + load(path : string&, format : string&) : bool
+  + save(taskPath : const string&, format : const string&) : bool
+  + load(taskPath : string&, format : string&) : bool
 }
 
 class CsvSettingsStorage {
-  + save(path : string, format : string) : bool
-  + load(path : string&, format : string&) : bool
+  + save(taskPath : const string&, format : const string&) : bool
+  + load(taskPath : string&, format : string&) : bool
 }
 
-interface IStorageFactory <<Abstract Factory>> {
+interface IStorageFactory <<AbstractFactory>> {
   + formatName() : string
   + createTaskStorage() : unique_ptr<ITaskStorage>
   + createSettingsStorage() : unique_ptr<ISettingsStorage>
