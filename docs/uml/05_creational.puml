@@ -1,4 +1,3 @@
-
 @startuml 05_creational
 title Порождающие паттерны TaskFlow: Singleton, Factory Method, Abstract Factory
 
@@ -10,18 +9,22 @@ package "Singleton" {
   class AppSettings <<Singleton>> {
     - pathToFile : string
     - format : string
+    - factory_ : unique_ptr<IStorageFactory>
     - AppSettings()
     + instance() : AppSettings&
     + getPathToFile() : string
     + getFormat() : string
-    + setPathToFile(p : string) : void
-    + setFormat(f : string) : void
+    + setPathToFile(p : const string&) : void
+    + setFormat(f : const string&) : void
+    + factory() : IStorageFactory&
+    + saveSettings() : bool
+    + loadSettings() : bool
   }
   class TaskFactory <<Singleton>> {
     - creators : vector<unique_ptr<TaskCreator>>
     - TaskFactory()
     + instance() : TaskFactory&
-    + create(type : string) : unique_ptr<Task>
+    + create(type : const string&) : unique_ptr<Task>
     + typeNames() : vector<string>
   }
 }
@@ -41,12 +44,15 @@ package "Factory Method" {
     + create() : unique_ptr<Task>
   }
   class SimpleTaskCreator <<ConcreteCreator>> {
+    + typeName() : string
     + create() : unique_ptr<Task>
   }
   class DeadlineTaskCreator <<ConcreteCreator>> {
+    + typeName() : string
     + create() : unique_ptr<Task>
   }
   class RecurringTaskCreator <<ConcreteCreator>> {
+    + typeName() : string
     + create() : unique_ptr<Task>
   }
   class Task <<Product>> {
@@ -56,7 +62,8 @@ package "Factory Method" {
   class SimpleTask <<ConcreteProduct>>
   class DeadlineTask <<ConcreteProduct>>
   class RecurringTask <<ConcreteProduct>> {
-    - intervalDays : int
+    - intervalDays_ : int
+    + getInterval() : int
     + setInterval(n : int) : void
   }
 }
@@ -91,17 +98,29 @@ package "Abstract Factory" {
     + createSettingsStorage() : unique_ptr<ISettingsStorage>
   }
   interface ITaskStorage <<AbstractProduct>> {
-    + save(list : TaskList, path : string) : bool
-    + load(list : TaskList, path : string) : int
+    + save(list : const TaskList&, path : const string&) : bool
+    + load(list : TaskList&, path : const string&) : int
   }
   interface ISettingsStorage <<AbstractProduct>> {
-    + save(path : string, format : string) : bool
-    + load(path : string&, format : string&) : bool
+    + save(taskPath : const string&, format : const string&) : bool
+    + load(taskPath : string&, format : string&) : bool
   }
-  class TxtTaskStorage <<ConcreteProduct>>
-  class CsvTaskStorage <<ConcreteProduct>>
-  class TxtSettingsStorage <<ConcreteProduct>>
-  class CsvSettingsStorage <<ConcreteProduct>>
+  class TxtTaskStorage <<ConcreteProduct>> {
+    + save(list : const TaskList&, path : const string&) : bool
+    + load(list : TaskList&, path : const string&) : int
+  }
+  class CsvTaskStorage <<ConcreteProduct>> {
+    + save(list : const TaskList&, path : const string&) : bool
+    + load(list : TaskList&, path : const string&) : int
+  }
+  class TxtSettingsStorage <<ConcreteProduct>> {
+    + save(taskPath : const string&, format : const string&) : bool
+    + load(taskPath : string&, format : string&) : bool
+  }
+  class CsvSettingsStorage <<ConcreteProduct>> {
+    + save(taskPath : const string&, format : const string&) : bool
+    + load(taskPath : string&, format : string&) : bool
+  }
 }
 IStorageFactory <|.. TxtStorageFactory
 IStorageFactory <|.. CsvStorageFactory
