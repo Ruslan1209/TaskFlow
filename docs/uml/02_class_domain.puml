@@ -1,3 +1,4 @@
+
 @startuml 02_class_domain
 title TaskFlow: диаграмма классов (домен и порождающие паттерны)
 
@@ -184,16 +185,11 @@ class Menu {
 }
 
 class TaskService {
-  - list : TaskList
-  + validate(title : string, description : string, date : string) : bool
-  + addTask(type : string, title : string, description : string, date : string, priority : Priority, tags : vector<string>, intervalDays : int) : int
-  + editTask(id : int, patch : const Task&) : bool
+  - taskList : TaskList*
+  + validate(title : string, priority : int) : bool
+  + addTask(title : string, priority : int) : bool
   + removeTask(id : int) : bool
-  + all() : vector<Task*>
-  + findBy(filter : const TaskFilter&) : vector<Task*>
-  + save() : bool
-  + load() : int
-  + overdueToday() : vector<Task*>
+  + setTaskList(list : TaskList*) : void
 }
 
 Task <|-- SimpleTask
@@ -228,7 +224,7 @@ Task ..> Status
 TaskFilter ..> Priority
 
 Menu --> TaskService : работает через
-TaskService *-- TaskList : владеет списком
+TaskService o-- TaskList : указатель на список
 TaskService ..> TaskFactory : создаёт задачи
 TaskService ..> AppSettings : путь и формат
 TaskService ..> TaskFilter : findBy()
