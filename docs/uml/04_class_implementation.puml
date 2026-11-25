@@ -4,129 +4,228 @@ title Диаграмма классов: реализация (ДЗ-4)
 hide circle
 skinparam classAttributeIconSize 0
 
-enum Priority {
-  LOW = 1
-  MEDIUM = 2
-  HIGH = 3
+package "Модель: задачи" {
+  enum Priority {
+    High = 1
+    Medium = 2
+    Low = 3
+  }
+
+  enum Status {
+    New
+    InProgress
+    Done
+  }
+
+  class Task {
+    - id : int
+    - title : string
+    - description : string
+    - date : string
+    - priority : Priority
+    - status : Status
+    - tags : vector<string>
+    + getId() : int
+    + setId(newId : int) : void
+    + getTitle() : string
+    + setTitle(t : string) : void
+    + getDescription() : string
+    + setDescription(d : string) : void
+    + getDate() : string
+    + setDate(d : string) : void
+    + getPriority() : Priority
+    + setPriority(p : Priority) : void
+    + getStatus() : Status
+    + setStatus(s : Status) : void
+    + getTags() : vector<string>
+    + setTags(t : vector<string>) : void
+    + typeName() : string
+    + extraInfo() : string
+    + matchesTag(tag : string) : bool
+    + matchesDate(d : string) : bool
+    + matchesPriority(p : Priority) : bool
+  }
+
+  class SimpleTask {
+    + typeName() : string
+  }
+
+  class DeadlineTask {
+    + typeName() : string
+    + extraInfo() : string
+  }
+
+  class RecurringTask {
+    - intervalDays : int
+    + getInterval() : int
+    + setInterval(n : int) : void
+    + typeName() : string
+    + extraInfo() : string
+  }
 }
 
-enum TaskStatus {
-  NEW
-  IN_WORK
-  PAUSED
-  OVERDUE
-  DONE
-  CANCELLED
-  ARCHIVED
+package "Список, фильтр, сервис" {
+  class TaskList {
+    - tasks_ : vector<unique_ptr<Task>>
+    - nextId : int
+    + addTask(task : unique_ptr<Task>) : int
+    + editTask(id : int, patch : const Task&) : bool
+    + find(id : int) : Task*
+    + removeTask(id : int) : bool
+    + clear() : void
+    + nextTaskId() : int
+    + bumpNextTaskId(v : int) : void
+    + all() : const vector<unique_ptr<Task>>&
+    + findBy(filter : const TaskFilter&) : vector<Task*>
+    + sortedByDate() : vector<Task*>
+  }
+
+  class TaskFilter {
+    - tag_ : string
+    - date_ : string
+    - priority_ : Priority
+    - prioritySet_ : bool
+    + setTag(tag : string) : void
+    + setDate(date : string) : void
+    + setPriority(p : Priority) : void
+    + matches(task : const Task&) : bool
+  }
+
+  class TaskService {
+    - taskList : TaskList*
+    + validate(title : string, priority : int) : bool
+    + addTask(title : string, priority : int) : bool
+    + removeTask(id : int) : bool
+    + setTaskList(list : TaskList*) : void
+  }
 }
 
-class Task {
-  - id : int
-  - title : string
-  - date : string
-  - priority : Priority
-  - status : TaskStatus
-  - completedDate : string
-  + setId(newId : int) : void
-  + setTitle(t : string) : void
-  + setDate(d : string) : void
-  + setPriority(p : Priority) : void
-  + setStatus(s : TaskStatus) : void
-  + setCompletedDate(d : string) : void
-  + getId() : int
-  + getStatus() : TaskStatus
-  + getTitle() : string
-  + getDate() : string
-  + getPriority() : Priority
-  + start(today : string) : bool
-  + pause() : bool
-  + markDone(today : string) : bool
-  + cancel() : bool
-  + archive() : bool
-  + check(today : string) : bool
-  + matchesTag(tag : string) : bool
-  + matchesDate(d : string) : bool
-  + matchesPriority(p : Priority) : bool
+package "Фабрика задач (Factory Method)" {
+  interface TaskCreator <<Factory Method>> {
+    + typeName() : string
+    + create() : unique_ptr<Task>
+  }
+
+  class TaskFactory <<Singleton>> {
+    - creators : vector<unique_ptr<TaskCreator>>
+    - TaskFactory()
+    + instance() : TaskFactory&
+    + create(type : string) : unique_ptr<Task>
+    + typeNames() : vector<string>
+  }
+
+  class SimpleTaskCreator {
+    + create() : unique_ptr<Task>
+  }
+
+  class DeadlineTaskCreator {
+    + create() : unique_ptr<Task>
+  }
+
+  class RecurringTaskCreator {
+    + create() : unique_ptr<Task>
+  }
 }
 
-class TaskList {
-  - tasks_ : vector<Task>
-  + addTask(task : Task) : void
-  + editTask(id : int, task : Task) : bool
-  + removeTask(id : int) : bool
-  + findBy(filter : TaskFilter) : vector<Task>
-  + sortedByDate() : vector<Task>
+package "Хранилище задач" {
+  interface ITaskStorage {
+    + save(list : const TaskList&, path : string) : bool
+    + load(list : TaskList&, path : string) : int
+  }
+
+  class TxtTaskStorage {
+    + save(list : const TaskList&, path : string) : bool
+    + load(list : TaskList&, path : string) : int
+  }
+
+  class CsvTaskStorage {
+    + save(list : const TaskList&, path : string) : bool
+    + load(list : TaskList&, path : string) : int
+  }
 }
 
-class TaskService {
-  - taskList_ : TaskList*
-  + setTaskList(list : TaskList*) : void
-  + addTask(title : string, priority : int) : bool
-  + removeTask(id : int) : bool
-  + validate(title : string, priority : int) : bool
+package "Хранилище настроек" {
+  interface ISettingsStorage {
+    + save(path : string, format : string) : bool
+    + load(path : string&, format : string&) : bool
+  }
+
+  class TxtSettingsStorage {
+    + save(path : string, format : string) : bool
+    + load(path : string&, format : string&) : bool
+  }
+
+  class CsvSettingsStorage {
+    + save(path : string, format : string) : bool
+    + load(path : string&, format : string&) : bool
+  }
 }
 
-class TaskFilter {
-  - tag_ : string
-  - date_ : string
-  - priority_ : Priority
-  + setTag(tag : string) : void
-  + setDate(date : string) : void
-  + setPriority(p : Priority) : void
-  + matches(task : Task) : bool
+package "Семейство хранилищ (Abstract Factory)" {
+  interface IStorageFactory <<Abstract Factory>> {
+    + formatName() : string
+    + createTaskStorage() : unique_ptr<ITaskStorage>
+    + createSettingsStorage() : unique_ptr<ISettingsStorage>
+  }
+
+  class TxtStorageFactory {
+    + formatName() : string
+    + createTaskStorage() : unique_ptr<ITaskStorage>
+    + createSettingsStorage() : unique_ptr<ISettingsStorage>
+  }
+
+  class CsvStorageFactory {
+    + formatName() : string
+    + createTaskStorage() : unique_ptr<ITaskStorage>
+    + createSettingsStorage() : unique_ptr<ISettingsStorage>
+  }
 }
 
-class User {
-  - name_ : string
-  - taskList_ : TaskList*
-  + User(name : string)
-  + getName() : string
-  + attachList(list : TaskList*) : void
-  + getTaskList() : TaskList*
+package "Настройки приложения (Singleton)" {
+  class AppSettings <<Singleton>> {
+    - pathToFile : string
+    - format : string
+    - factory_ : unique_ptr<IStorageFactory>
+    - AppSettings()
+    + instance() : AppSettings&
+    + getPathToFile() : string
+    + getFormat() : string
+    + setPathToFile(p : string) : void
+    + setFormat(f : string) : void
+    + factory() : IStorageFactory&
+  }
 }
 
-class Tag {
-  - name_ : string
-  + Tag(name : string)
-  + name() : string
-  + matches(other : string) : bool
-}
+Task <|-- SimpleTask
+Task <|-- DeadlineTask
+Task <|-- RecurringTask
+TaskCreator <|.. SimpleTaskCreator
+TaskCreator <|.. DeadlineTaskCreator
+TaskCreator <|.. RecurringTaskCreator
+TaskFactory *-- TaskCreator : реестр создателей
+TaskFactory ..> Task : создаёт
+SimpleTaskCreator ..> SimpleTask : создаёт
+DeadlineTaskCreator ..> DeadlineTask : создаёт
+RecurringTaskCreator ..> RecurringTask : создаёт
 
-class Reminder {
-  - today_ : string
-  + setToday(date : string) : void
-  + check(tasks : vector<Task>, today : string) : vector<Task>
-}
-
-interface ITaskStorage {
-  + save(tasks : vector<Task>) : bool
-  + load() : vector<Task>
-}
-
-class FileStorage {
-  # filename_ : string
-  + FileStorage(filename : string)
-  + save(tasks : vector<Task>) : bool
-  + load() : vector<Task>
-}
-
-class CsvTaskStorage {
-  + save(tasks : vector<Task>) : bool
-  + load() : vector<Task>
-  + writeLine(task : Task) : void
-}
-
-TaskList *-- "1..*" Task : содержит
-User "1" --> "1" TaskList : работает со списком
-TaskService --> TaskList : изменяет
-TaskService ..> Task : validate()/создаёт
+TaskList *-- Task : владеет задачами
 TaskList ..> TaskFilter : findBy()
 TaskFilter ..> Task : matches()
-Reminder ..> Task : check()
-ITaskStorage ..> Task : save()/load()
-FileStorage ..|> ITaskStorage : реализует
-CsvTaskStorage --|> FileStorage : наследует
+TaskService o-- TaskList : указатель на список
+
+IStorageFactory <|.. TxtStorageFactory
+IStorageFactory <|.. CsvStorageFactory
+ITaskStorage <|.. TxtTaskStorage
+ITaskStorage <|.. CsvTaskStorage
+ISettingsStorage <|.. TxtSettingsStorage
+ISettingsStorage <|.. CsvSettingsStorage
+IStorageFactory ..> ITaskStorage : создаёт
+IStorageFactory ..> ISettingsStorage : создаёт
+ITaskStorage ..> Task : save/load
+ITaskStorage ..> TaskFactory : восстанавливает по типу
+
+AppSettings o-- IStorageFactory : хранит выбранное семейство
 Task ..> Priority
-Task ..> TaskStatus
+Task ..> Status
 TaskFilter ..> Priority
 @enduml
