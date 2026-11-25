@@ -92,6 +92,7 @@ void printTask(const Task* t) {
 
 int main() {
     TaskList list;
+    AppSettings::instance().loadSettings(); // настройки из прошлого запуска
     while (true) {
         cout << "\n1-добавить 2-показать все 3-изменить 4-удалить "
                 "5-сохранить 6-загрузить 7-настройки 8-поиск 0-выход\n";
@@ -216,6 +217,7 @@ int main() {
                 string f = readLine("Новый формат (txt или csv): ");
                 if (f == "txt" || f == "csv") {
                     s.setFormat(f);
+                    s.saveSettings(); // запомнили выбор до следующего запуска
                     cout << "Формат изменён на " << f << ".\n";
                 } else {
                     cout << "Неверный формат, допустимы только txt и csv. "
@@ -225,6 +227,7 @@ int main() {
                 string p = readLine("Новый путь к файлу: ");
                 if (!p.empty()) {
                     s.setPathToFile(p);
+                    s.saveSettings(); // запомнили путь
                     cout << "Путь изменён.\n";
                 } else {
                     cout << "Путь не может быть пустым.\n";
@@ -232,8 +235,7 @@ int main() {
             }
             break;
         }
-        case 8: 
-        {
+        case 8: {
             // Поиск через TaskFilter: Enter — пропустить критерий
             TaskFilter f;
             bool any = false;
@@ -267,7 +269,7 @@ int main() {
                 }
             }
             break;
-        }    
+        }
         default: cout << "Нет такого пункта.\n";
         }
     }
