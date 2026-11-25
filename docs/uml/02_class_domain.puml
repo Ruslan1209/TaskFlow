@@ -134,11 +134,13 @@ interface ITaskStorage {
 class TxtTaskStorage {
   + save(list : TaskList, path : string) : bool
   + load(list : TaskList, path : string) : int
+  - writeLine(out : ofstream, task : Task) : void
 }
 
 class CsvTaskStorage {
   + save(list : TaskList, path : string) : bool
   + load(list : TaskList, path : string) : int
+  - writeLine(out : ofstream, task : Task) : void
 }
 
 interface ISettingsStorage {
@@ -183,6 +185,7 @@ class Menu {
 
 class TaskService {
   - list : TaskList
+  + validate(title : string, description : string, date : string) : bool
   + addTask(type : string, title : string, description : string, date : string, priority : Priority, tags : vector<string>, intervalDays : int) : int
   + editTask(id : int, patch : const Task&) : bool
   + removeTask(id : int) : bool
