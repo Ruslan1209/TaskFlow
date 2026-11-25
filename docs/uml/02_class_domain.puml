@@ -127,20 +127,18 @@ class AppSettings <<Singleton>> {
 }
 
 interface ITaskStorage {
-  + save(list : TaskList, path : string) : bool
-  + load(list : TaskList, path : string) : int
+  + save(list : const TaskList&, path : string) : bool
+  + load(list : TaskList&, path : string) : int
 }
 
 class TxtTaskStorage {
-  + save(list : TaskList, path : string) : bool
-  + load(list : TaskList, path : string) : int
-  - writeLine(out : ofstream, task : Task) : void
+  + save(list : const TaskList&, path : string) : bool
+  + load(list : TaskList&, path : string) : int
 }
 
 class CsvTaskStorage {
-  + save(list : TaskList, path : string) : bool
-  + load(list : TaskList, path : string) : int
-  - writeLine(out : ofstream, task : Task) : void
+  + save(list : const TaskList&, path : string) : bool
+  + load(list : TaskList&, path : string) : int
 }
 
 interface ISettingsStorage {
