@@ -1,4 +1,3 @@
-
 @startuml 02_class_domain
 title TaskFlow: диаграмма классов (домен и порождающие паттерны)
 
@@ -177,13 +176,6 @@ class CsvStorageFactory {
   + createSettingsStorage() : unique_ptr<ISettingsStorage>
 }
 
-class Menu {
-  - running : bool
-  + run() : void
-  - showMenu() : void
-  - handleChoice(choice : int) : void
-}
-
 class TaskService {
   - taskList : TaskList*
   + validate(title : string, priority : int) : bool
@@ -223,9 +215,5 @@ Task ..> Priority
 Task ..> Status
 TaskFilter ..> Priority
 
-Menu --> TaskService : работает через
 TaskService o-- TaskList : указатель на список
-TaskService ..> TaskFactory : создаёт задачи
-TaskService ..> AppSettings : путь и формат
-TaskService ..> TaskFilter : findBy()
 @enduml
