@@ -76,13 +76,13 @@ public:
     }
 
     // --- пункт 3: редактирование. Пустая строка = оставить прежнее ---
-    bool hasTask(int id) const { return list_.find(id) != nullptr; }
-    string typeNameOf(int id) const {
+    bool hasTask(int id) { return list_.find(id) != nullptr; }
+    string typeNameOf(int id) {
         Task* t = list_.find(id);
         return t ? t->typeName() : "";
     }
     // старое значение поля для подсказки "[текущее]" в меню
-    string fieldOf(int id, const string& field) const {
+    string fieldOf(int id, const string& field) {
         Task* t = list_.find(id);
         if (!t) return "";
         if (field == "title") return t->getTitle();
