@@ -1,0 +1,127 @@
+@startuml 06_patterns
+title TaskFlow — новые паттерны ДЗ-6: Builder, Prototype, Facade, Adapter
+
+skinparam classAttributeIconSize 0
+
+package "Facade (Шаг 3)" {
+  class TaskFlowFacade <<Facade>> {
+    - list_ : TaskList
+    + taskTypes() : vector<string>
+    + addTask(type, title, desc, prio, date, tags, interval) : int
+    + allText() : vector<string>
+    + hasTask(id) : bool
+    + editTask(id, title, desc, prio, status, date, tags) : string
+    + removeTask(id) : string
+    + saveAll() : string
+    + loadAll() : string
+    + settingsText() : string
+    + setFormat(f) : string
+    + setPath(p) : string
+    + search(tag, date, prio) : vector<string>
+    + templateTexts() : vector<string>
+    + addFromTemplate(idx, title) : int
+    + importLegacy() : vector<string>
+  }
+}
+
+package "Builder (Шаг 1)" {
+  class TaskBuilder <<Builder>> {
+    - type_ : string
+    - title_ : string
+    - description_ : string
+    - date_ : string
+    - priority_ : Priority
+    - tags_ : vector<string>
+    - intervalDays_ : int
+    + forType(t) : TaskBuilder&
+    + title(s) : TaskBuilder&
+    + description(s) : TaskBuilder&
+    + date(s) : TaskBuilder&
+    + priority(p) : TaskBuilder&
+    + tags(t) : TaskBuilder&
+    + intervalDays(n) : TaskBuilder&
+    + build() : unique_ptr<Task>
+  }
+}
+
+package "Prototype (Шаг 2)" {
+  class TaskTemplates <<Prototype>> {
+    - protos : vector<pair<string, unique_ptr<Task> > >
+    - TaskTemplates()
+    + instance() : TaskTemplates&
+    + names() : vector<string>
+    + createFrom(idx) : unique_ptr<Task>
+  }
+  class Task {
+    + clone() : unique_ptr<Task>
+  }
+  class SimpleTask
+  class DeadlineTask
+  class RecurringTask
+}
+
+package "Adapter (Шаг 4)" {
+  class ITaskImporter <<Target>> {
+    + importAll() : vector<unique_ptr<Task> >
+  }
+  class LegacyTodoAdapter <<Adapter>> {
+    - legacy : LegacyTodo
+    - mapPriority(p) : Priority
+    - dateFromUnix(sec) : string
+    + importAll() : vector<unique_ptr<Task> >
+  }
+  class LegacyTodo <<Adaptee>> {
+    + exportAll() : vector<LegacyItem>
+  }
+  class LegacyItem
+}
+
+package "Существующие подсистемы (ДЗ-1-5)" {
+  class TaskList
+  class TaskFilter
+  class TaskFactory <<Singleton>> {
+    + instance() : TaskFactory&
+    + create(type) : unique_ptr<Task>
+  }
+  class TaskCreator <<FactoryMethod>> {
+    + typeName() : string
+    + create() : unique_ptr<Task>
+  }
+  class SimpleTaskCreator <<FactoryMethod>>
+  class DeadlineTaskCreator <<FactoryMethod>>
+  class RecurringTaskCreator <<FactoryMethod>>
+  class AppSettings <<Singleton>>
+  class IStorageFactory <<AbstractFactory>>
+  class ITaskStorage
+  class ISettingsStorage
+}
+
+' --- связи фасада с подсистемами: меню знает только фасад ---
+TaskFlowFacade --> TaskList
+TaskFlowFacade --> TaskFilter
+TaskFlowFacade --> TaskBuilder
+TaskFlowFacade --> TaskTemplates
+TaskFlowFacade --> AppSettings
+TaskFlowFacade --> ITaskImporter
+
+' --- Builder ---
+TaskBuilder ..> TaskFactory : create(type)
+TaskFactory o-- TaskCreator
+TaskCreator <|.. SimpleTaskCreator
+TaskCreator <|.. DeadlineTaskCreator
+TaskCreator <|.. RecurringTaskCreator
+
+' --- Prototype ---
+TaskTemplates o-- "protos" Task : шаблоны
+TaskTemplates ..> Task : createFrom() = clone()
+Task <|-- SimpleTask
+Task <|-- DeadlineTask
+Task <|-- RecurringTask
+
+' --- Adapter ---
+ITaskImporter <|.. LegacyTodoAdapter
+LegacyTodoAdapter o-- LegacyTodo : оборачивает
+LegacyTodo o-- LegacyItem
+TaskBuilder <.. LegacyTodoAdapter : создание задачи
+
+@enduml
