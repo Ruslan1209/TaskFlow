@@ -2,6 +2,7 @@
 #define TASK_H
 #include <string>
 #include <vector>
+#include <memory>
 #include "Priority.h"
 using namespace std;
 
@@ -31,6 +32,9 @@ public:
     // для Factory Method: каждый тип задачи представляется по-своему
     virtual string typeName() const { return "обычная"; }
     virtual string extraInfo() const { return ""; }
+    // для Prototype: копия своего типа. Вектор и строки копируются по значению,
+    // поэтому копия независима от оригинала (глубокое копирование)
+    virtual unique_ptr<Task> clone() const { return unique_ptr<Task>(new Task(*this)); }
     // для TaskFilter: проверка совпадений
     bool matchesTag(const string& tag) const {
         for (size_t i = 0; i < tags.size(); ++i)
@@ -40,11 +44,13 @@ public:
     bool matchesDate(const string& d) const { return date == d; }
     bool matchesPriority(Priority p) const { return priority == p; }
 };
+
 class SimpleTask : public Task {
 public:
     SimpleTask() {}
     string typeName() const { return "обычная"; }
     string extraInfo() const { return ""; }
+    unique_ptr<Task> clone() const { return unique_ptr<Task>(new SimpleTask(*this)); }
 };
 
 class DeadlineTask : public Task {
@@ -55,6 +61,7 @@ public:
     string getDeadline() const { return deadline_; }
     string typeName() const { return "со сроком"; }
     string extraInfo() const { return deadline_; }
+    unique_ptr<Task> clone() const { return unique_ptr<Task>(new DeadlineTask(*this)); }
 };
 
 class RecurringTask : public Task {
@@ -65,5 +72,6 @@ public:
     void setInterval(int n) { intervalDays_ = n; }
     string typeName() const { return "повторяющаяся"; }
     string extraInfo() const { return "каждые " + to_string(intervalDays_) + " дн."; }
+    unique_ptr<Task> clone() const { return unique_ptr<Task>(new RecurringTask(*this)); }
 };
 #endif // TASK_H
