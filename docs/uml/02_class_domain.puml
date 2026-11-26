@@ -40,6 +40,7 @@ class Task {
   + setTags(t : vector<string>) : void
   + typeName() : string
   + extraInfo() : string
+  + clone() : unique_ptr<Task>
   + matchesTag(tag : string) : bool
   + matchesDate(d : string) : bool
   + matchesPriority(p : Priority) : bool
@@ -47,11 +48,17 @@ class Task {
 
 class SimpleTask {
   + typeName() : string
+  + extraInfo() : string
+  + clone() : unique_ptr<Task>
 }
 
 class DeadlineTask {
+  - deadline_ : string
+  + setDeadline(d : string) : void
+  + getDeadline() : string
   + typeName() : string
   + extraInfo() : string
+  + clone() : unique_ptr<Task>
 }
 
 class RecurringTask {
@@ -60,6 +67,7 @@ class RecurringTask {
   + setInterval(n : int) : void
   + typeName() : string
   + extraInfo() : string
+  + clone() : unique_ptr<Task>
 }
 
 interface TaskCreator <<Creator>> {
@@ -184,6 +192,75 @@ class TaskService {
   + setTaskList(list : TaskList*) : void
 }
 
+class TaskBuilder <<Builder>> {
+  - type_ : string
+  - title_ : string
+  - description_ : string
+  - date_ : string
+  - priority_ : Priority
+  - prioritySet_ : bool
+  - tags_ : vector<string>
+  - intervalDays_ : int
+  + forType(t : string) : TaskBuilder&
+  + title(s : string) : TaskBuilder&
+  + description(s : string) : TaskBuilder&
+  + date(s : string) : TaskBuilder&
+  + priority(p : Priority) : TaskBuilder&
+  + tags(t : vector<string>) : TaskBuilder&
+  + intervalDays(n : int) : TaskBuilder&
+  + build() : unique_ptr<Task>
+}
+
+class TaskTemplates <<Prototype>> {
+  - protos : vector<pair<string, unique_ptr<Task> > >
+  - TaskTemplates()
+  + instance() : TaskTemplates&
+  + names() : vector<string>
+  + createFrom(idx : size_t) : unique_ptr<Task>
+}
+
+class TaskFlowFacade <<Facade>> {
+  - list_ : TaskList
+  + taskTypes() : vector<string>
+  + addTask(type : string, title : string, desc : string, prio : Priority, date : string, tagsLine : string, intervalDays : int) : int
+  + allText() : vector<string>
+  + hasTask(id : int) : bool
+  + typeNameOf(id : int) : string
+  + fieldOf(id : int, field : string) : string
+  + editTask(id : int, title : string, desc : string, prio : string, status : string, date : string, tagsLine : string) : string
+  + removeTask(id : int) : string
+  + saveAll() : string
+  + loadAll() : string
+  + settingsText() : string
+  + setFormat(f : string) : string
+  + setPath(p : string) : string
+  + search(tag : string, date : string, prio : string) : vector<string>
+  + templateTexts() : vector<string>
+  + addFromTemplate(idx : size_t, title : string) : int
+  + importLegacy() : vector<string>
+}
+
+interface ITaskImporter <<Target>> {
+  + importAll() : vector<unique_ptr<Task> >
+}
+
+class LegacyTodoAdapter <<Adapter>> {
+  - legacy : LegacyTodo
+  - mapPriority(p : int) : Priority
+  - dateFromUnix(sec : long long) : string
+  + importAll() : vector<unique_ptr<Task> >
+}
+
+class LegacyTodo <<Adaptee>> {
+  + exportAll() : vector<LegacyItem>
+}
+
+class LegacyItem {
+  + text : string
+  + prio : int
+  + dueUnix : long long
+}
+
 Task <|-- SimpleTask
 Task <|-- DeadlineTask
 Task <|-- RecurringTask
@@ -214,6 +291,25 @@ ITaskStorage ..> TaskFactory : восстанавливает по типу
 Task ..> Priority
 Task ..> Status
 TaskFilter ..> Priority
+
+' --- новые паттерны ДЗ-6 ---
+TaskFlowFacade *-- TaskList : владеет списком
+TaskFlowFacade ..> TaskFilter : search()
+TaskFlowFacade ..> TaskBuilder : addTask()
+TaskFlowFacade ..> TaskTemplates : пункт 9
+TaskFlowFacade ..> AppSettings : пункты 5-7
+TaskFlowFacade ..> ITaskImporter : пункт 10
+
+TaskBuilder ..> TaskFactory : create(type)
+TaskBuilder ..> Task : собирает
+
+TaskTemplates o-- Task : protos : шаблоны
+TaskTemplates ..> Task : createFrom() = clone()
+
+ITaskImporter <|.. LegacyTodoAdapter
+LegacyTodoAdapter o-- LegacyTodo : оборачивает
+LegacyTodo o-- LegacyItem
+LegacyTodoAdapter ..> TaskBuilder : создание задачи
 
 TaskService o-- TaskList : указатель на список
 @enduml
