@@ -7,7 +7,7 @@ participant "TaskFlowFacade\n<<Facade>>" as Facade
 participant "CommandHistory\n<<Invoker>>" as History
 participant "RemoveTaskCommand\n<<ConcreteCommand>>" as Cmd
 participant "TaskList\n<<Receiver>>" as List
-participant "Observer'ы\n(автосохранение, сроки)" as Obs
+participant "AutoSaveObserver\nDeadlineObserver\n<<ConcreteObserver>>" as Obs
 
 == Пользователь выбирает «Удалить» и вводит номер ==
 Пользователь -> Menu : пункт 4, номер задачи
@@ -22,7 +22,7 @@ else задача найдена
   Facade -> History : run(move(cmd))
   History -> Cmd : execute()
   Cmd -> List : removeTask(id)
-  List -> Obs : notifyAll(событие "удаление")
+  List -> Obs : onTaskEvent(Removed, task)
   Obs --> List : автосохранение перезаписывает файл
   Cmd --> History : результат
   History --> Facade : "Задача удалена."
@@ -39,7 +39,7 @@ else есть выполненные команды
   Facade -> History : undo()
   History -> Cmd : undo()
   Cmd -> List : addTask(восстановленная задача)
-  List -> Obs : notifyAll(событие "добавление")
+  List -> Obs : onTaskEvent(Added, task)
   Obs --> List : автосохранение срабатывает и здесь
   Cmd --> History : результат
   History --> Facade : "Отменено: удаление задачи #N."
@@ -48,7 +48,7 @@ else есть выполненные команды
 end
 
 note over History, Cmd
-  После нового действия redo невозможен:
-  History.run() очищает стек undone.
+  После нового действия повтор невозможен:
+  run() очищает стек отменённых команд.
 end note
 @enduml
