@@ -1,5 +1,4 @@
 
-# TaskFlow — ежедневник задач на C++
 
 Консольное приложение «список задач»: создание, редактирование, поиск,
 сортировка, сохранение в файл, отмена и повтор действий.
@@ -38,7 +37,7 @@
 | Facade | единая точка входа для меню | TaskFlowFacade.h |
 | Adapter | импорт старых форматов | LegacyTodoAdapter.h, LegacyFileAdapter.h |
 | Strategy | поиск и сортировка | TaskSearchStrategy.h, TaskSortStrategy.h |
-| Observer | автосохранение, проверка сроков | TaskObservers.h |
+| Observer | автосохранение, проверка сроков | TaskObserver.h, TaskObservers.h |
 | Command | отмена и повтор действий | TaskCommand.h |
 
 Подробности — в docs/PATTERNS.md и docs/07_why.md.
@@ -52,8 +51,10 @@ TaskFlow/
 
 ## Документация
 
-- docs/PATTERNS.md — карта паттернов проекта
-- docs/07_why.md — обоснование выбора паттернов
-- docs/uml/07_behavioral.puml — классы Strategy, Observer, Command
-- docs/uml/07_seq_undo.puml — последовательность «удалить → отменить»
-- docs/uml/02_class_domain.puml — доменная модель
+- docs/PATTERNS.md — карта паттернов проекта (ДЗ-1…ДЗ-7)
+- docs/07_why.md — обоснование выбора паттернов ДЗ-07
+- docs/uml/07_behavioral.puml — классы Strategy, Observer, Command (+ .png)
+- docs/uml/07_seq_undo.puml — последовательность «удалить → отменить» (+ .png)
+- docs/uml/02_class_domain.puml — доменная модель всего проекта
+ME (2).md…]()
+
