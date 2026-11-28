@@ -1,10 +1,18 @@
+// Egednewnik
+
 #include <iostream>
 #include <string>
 #include "TaskFlowFacade.h"
+#include <cstdlib>
 using namespace std;
 
-int main() {
+int main() 
+{
+    system("chcp 1251 > NUL");
+
     TaskFlowFacade facade;
+    string line;
+    string title, desc, prio, status, date, tagsLine;
     cout << "=== Менеджер задач ===" << endl;
     while (true) {
         cout << "\nМеню:" << endl;
@@ -36,7 +44,7 @@ int main() {
                 cout << "Тип: ";
                 getline(cin, line);
                 int ti = atoi(line.c_str());
-                if (ti < 1 || ti > (int)types.size()) {
+                if (ti < 1 || ti >(int)types.size()) {
                     cout << "Нет такого типа." << endl;
                     continue;
                 }
@@ -49,7 +57,7 @@ int main() {
                 getline(cin, line);
                 int p = atoi(line.c_str());
                 Priority prio = (p == 1 ? Priority::High :
-                                 p == 3 ? Priority::Low : Priority::Medium);
+                    p == 3 ? Priority::Low : Priority::Medium);
                 cout << "Дата (ГГГГ-ММ-ДД): ";
                 getline(cin, date);
                 cout << "Теги через запятую: ";
@@ -62,7 +70,8 @@ int main() {
                 }
                 int id = facade.addTask(type, title, desc, prio, date, tagsLine, interval);
                 cout << "Задача создана, номер " << id << "." << endl;
-            } else if (choice == 2) {
+            }
+            else if (choice == 2) {
                 if (!facade.hasTasks()) {
                     cout << "Задач пока нет." << endl;
                     continue;
@@ -76,7 +85,8 @@ int main() {
                 vector<string> rows = facade.allText(atoi(line.c_str()) - 1);
                 for (size_t i = 0; i < rows.size(); ++i)
                     cout << rows[i] << endl;
-            } else if (choice == 3) {
+            }
+            else if (choice == 3) {
                 cout << "Номер задачи: ";
                 getline(cin, line);
                 int id = atoi(line.c_str());
@@ -85,7 +95,7 @@ int main() {
                     continue;
                 }
                 cout << "Оставь поле пустым, чтобы не менять. Задача #"
-                     << id << " (" << facade.typeNameOf(id) << ")" << endl;
+                    << id << " (" << facade.typeNameOf(id) << ")" << endl;
                 cout << "Название [" << facade.fieldOf(id, "title") << "]: ";
                 getline(cin, title);
                 cout << "Описание [" << facade.fieldOf(id, "description") << "]: ";
@@ -93,27 +103,31 @@ int main() {
                 cout << "Приоритет (1/2/3) [" << facade.fieldOf(id, "priority") << "]: ";
                 getline(cin, prio);
                 cout << "Статус (1 — новая, 2 — в работе, 3 — готова) ["
-                     << facade.fieldOf(id, "status") << "]: ";
+                    << facade.fieldOf(id, "status") << "]: ";
                 getline(cin, status);
                 cout << "Дата [" << facade.fieldOf(id, "date") << "]: ";
                 getline(cin, date);
                 cout << "Теги через запятую: ";
                 getline(cin, tagsLine);
                 cout << facade.editTask(id, title, desc, prio, status, date, tagsLine) << endl;
-            } else if (choice == 4) {
+            }
+            else if (choice == 4) {
                 cout << "Номер задачи: ";
                 getline(cin, line);
                 cout << facade.removeTask(atoi(line.c_str())) << endl;
-            } else if (choice == 5) {
+            }
+            else if (choice == 5) {
                 cout << facade.saveAll() << endl;
-            } else if (choice == 6) {
+            }
+            else if (choice == 6) {
                 if (facade.hasTasks()) {
                     cout << "Список не пуст — загрузить и заменить его? (y/n): ";
                     getline(cin, line);
                     if (line != "y" && line != "Y") continue;
                 }
                 cout << facade.loadAll() << endl;
-            } else if (choice == 7) {
+            }
+            else if (choice == 7) {
                 cout << facade.settingsText() << endl;
                 cout << "1 — сменить формат, 2 — сменить путь, другое — назад: ";
                 getline(cin, line);
@@ -121,12 +135,14 @@ int main() {
                     cout << "Формат (txt или csv): ";
                     getline(cin, line);
                     cout << facade.setFormat(line) << endl;
-                } else if (line == "2") {
+                }
+                else if (line == "2") {
                     cout << "Новый путь к файлу: ";
                     getline(cin, line);
                     cout << facade.setPath(line) << endl;
                 }
-            } else if (choice == 8) {
+            }
+            else if (choice == 8) {
                 vector<string> cr = facade.searchCriteria();
                 cout << "Критерий:" << endl;
                 for (size_t i = 0; i < cr.size(); ++i)
@@ -140,14 +156,17 @@ int main() {
                     getline(cin, v1);
                     cout << "Дата до (пусто — без верхней границы): ";
                     getline(cin, v2);
-                } else if (c > 0) {
+                }
+                else if (c > 0) {
                     cout << "Значение: ";
                     getline(cin, v1);
-                } else continue;
+                }
+                else continue;
                 vector<string> rows = facade.search(c, v1, v2);
                 for (size_t i = 0; i < rows.size(); ++i)
                     cout << rows[i] << endl;
-            } else if (choice == 9) {
+            }
+            else if (choice == 9) {
                 vector<string> tmpls = facade.templateTexts();
                 cout << "Шаблоны:" << endl;
                 for (size_t i = 0; i < tmpls.size(); ++i)
@@ -159,24 +178,30 @@ int main() {
                 getline(cin, title);
                 int id = facade.addFromTemplate(ti - 1, title);
                 cout << "Задача создана, номер " << id << "." << endl;
-            } else if (choice == 10) {
+            }
+            else if (choice == 10) {
                 vector<string> rows = facade.importLegacy();
                 if (rows.empty()) cout << "Нечего импортировать." << endl;
                 for (size_t i = 0; i < rows.size(); ++i)
                     cout << rows[i] << endl;
-            } else if (choice == 11) {
+            }
+            else if (choice == 11) {
                 cout << facade.undo() << endl;
-            } else if (choice == 12) {
+            }
+            else if (choice == 12) {
                 cout << facade.redo() << endl;
-            } else if (choice == 0) {
+            }
+            else if (choice == 0) {
                 cout << "До встречи!" << endl;
                 break;
-            } else {
+            }
+            else {
                 cout << "Нет такого пункта." << endl;
             }
-        } catch (const exception& e) {
+        }
+        catch (const exception& e) {
             cout << "Ошибка: " << e.what() << endl;
         }
     }
-    return 0;
 }
+
