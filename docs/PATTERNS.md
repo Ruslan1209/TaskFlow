@@ -1,4 +1,4 @@
-[PATTERNS.md](https://github.com/user-attachments/files/35553941/PATTERNS.md)
+
 
 # TaskFlow — карта паттернов
 
