@@ -1,3 +1,4 @@
+#pragma once
 #ifndef TASKFLOWFACADE_H
 #define TASKFLOWFACADE_H
 #include <string>
@@ -8,6 +9,7 @@
 #include "TaskBuilder.h"
 #include "TaskTemplates.h"
 #include "AppSettings.h"
+#include "AppConfig.h"
 #include "LegacyTodoAdapter.h"
 #include "TaskSearchStrategy.h"
 #include "TaskSortStrategy.h"
@@ -23,6 +25,7 @@ class TaskFlowFacade {
     AutoSaveObserver* autoSave_;
     DeadlineObserver* deadline_;
     CommandHistory history_;
+    bool autoSaveOn_;
 
     static vector<string> splitTags(const string& line) {
         return splitTagsList(line);
@@ -31,10 +34,10 @@ class TaskFlowFacade {
     static string taskText(const Task* t) {
         ostringstream os;
         os << "#" << t->getId() << " [" << statusName(t->getStatus()) << "] "
-           << t->getTitle()
-           << " | тип: " << t->typeName()
-           << " | приоритет: " << priorityName(t->getPriority())
-           << " | срок: " << t->getDate();
+            << t->getTitle()
+            << " | тип: " << t->typeName()
+            << " | приоритет: " << priorityName(t->getPriority())
+            << " | срок: " << t->getDate();
         if (!t->getDescription().empty()) os << " | " << t->getDescription();
         const vector<string>& tg = t->getTags();
         if (!tg.empty()) {
@@ -51,12 +54,13 @@ public:
         AppSettings::instance().loadSettings();
         autoSave_ = new AutoSaveObserver(list_);
         deadline_ = new DeadlineObserver();
-        list_.subscribe(autoSave_);
         list_.subscribe(deadline_);
+        autoSaveOn_ = AppConfig::instance().getAutoSave();
+        if (autoSaveOn_) list_.subscribe(autoSave_);
     }
 
     ~TaskFlowFacade() {
-        list_.unsubscribe(autoSave_);
+        if (autoSaveOn_) list_.unsubscribe(autoSave_);
         list_.unsubscribe(deadline_);
         delete autoSave_;
         delete deadline_;
@@ -66,11 +70,11 @@ public:
     vector<string> taskTypes() const { return TaskFactory::instance().typeNames(); }
 
     int addTask(const string& type, const string& title, const string& desc,
-                Priority prio, const string& date, const string& tagsLine,
-                int intervalDays) {
+        Priority prio, const string& date, const string& tagsLine,
+        int intervalDays) {
         unique_ptr<AddTaskCommand> cmd(
             new AddTaskCommand(list_, type, title, desc, prio,
-                               date, tagsLine, intervalDays));
+                date, tagsLine, intervalDays));
         AddTaskCommand* raw = cmd.get();
         history_.run(move(cmd));   // если данные плохие — Builder бросит исключение до записи
         return raw->id();
@@ -94,13 +98,16 @@ public:
         if (sortMode == 1) {
             SortByDateStrategy s;
             ordered = list_.sortedBy(s);
-        } else if (sortMode == 2) {
+        }
+        else if (sortMode == 2) {
             SortByPriorityStrategy s;
             ordered = list_.sortedBy(s);
-        } else if (sortMode == 3) {
+        }
+        else if (sortMode == 3) {
             SortByTitleStrategy s;
             ordered = list_.sortedBy(s);
-        } else {
+        }
+        else {
             const vector<unique_ptr<Task>>& all = list_.all();
             for (size_t i = 0; i < all.size(); ++i)
                 ordered.push_back(all[i].get());
@@ -128,8 +135,8 @@ public:
     }
 
     string editTask(int id, const string& title, const string& desc,
-                    const string& prio, const string& status,
-                    const string& date, const string& tagsLine) {
+        const string& prio, const string& status,
+        const string& date, const string& tagsLine) {
         Task* t = list_.find(id);
         if (!t) return "Задача с номером " + to_string(id) + " не найдена.";
         TaskSnapshot before = TaskSnapshot::capture(t);
@@ -189,7 +196,7 @@ public:
         if (n < 0) return "Не удалось открыть файл: " + s.getPathToFile();
         return "Загружено задач: " + to_string(n) + ". Номера пересчитаны заново.";
     }
-     
+
     // --- пункт 13: Adapter — загрузка старого формата ---
     string loadLegacy() {
         list_.clear();
@@ -199,11 +206,12 @@ public:
         if (n < 0) return "Не удалось открыть файл: todo_old.txt";
         return "Загружено из старого формата задач: " + to_string(n) + ".";
     }
+
     // --- пункт 7 ---
     string settingsText() const {
         AppSettings& s = AppSettings::instance();
         return "Настройки. Текущий формат: " + s.getFormat() +
-               " | путь к файлу: " + s.getPathToFile();
+            " | путь к файлу: " + s.getPathToFile();
     }
     string setFormat(const string& f) {
         if (f != "txt" && f != "csv")
@@ -217,6 +225,25 @@ public:
         AppSettings::instance().setPathToFile(p);
         AppSettings::instance().saveSettings();
         return "Путь изменён.";
+    }
+
+    // --- пункт 14: Singleton AppConfig — автосохранение вкл/выкл ---
+    string autoSaveText() const {
+        AppConfig& c = AppConfig::instance();
+        return string("Автосохранение сейчас: ") +
+            (c.getAutoSave() ? "включено" : "выключено") +
+            ". Введите 1 — включить, 0 — выключить.";
+    }
+    string setAutoSave(bool on) {
+        AppConfig& c = AppConfig::instance();
+        if (c.getAutoSave() == on)
+            return on ? "Автосохранение уже включено." :
+                        "Автосохранение уже выключено.";
+        c.setAutoSave(on);
+        autoSaveOn_ = on;
+        if (on) list_.subscribe(autoSave_);
+        else    list_.unsubscribe(autoSave_);
+        return on ? "Автосохранение включено." : "Автосохранение выключено.";
     }
 
     // --- пункт 8 ---
@@ -236,24 +263,36 @@ public:
         if (criterion == 1) {
             if (value.empty()) { out.push_back("Тег не задан."); return out; }
             s.reset(new TagSearchStrategy(value));
-        } else if (criterion == 2) {
+        }
+        else if (criterion == 2) {
             if (value == "1") s.reset(new PrioritySearchStrategy(Priority::High));
             else if (value == "2") s.reset(new PrioritySearchStrategy(Priority::Medium));
             else if (value == "3") s.reset(new PrioritySearchStrategy(Priority::Low));
             else { out.push_back("Приоритет не понял, введите 1, 2 или 3."); return out; }
-        } else if (criterion == 3) {
+        }
+        else if (criterion == 3) {
             if (!isValidDate(value))
-                { out.push_back("Дата должна быть ГГГГ-ММ-ДД, например 2026-12-15."); return out; }
+            {
+                out.push_back("Дата должна быть ГГГГ-ММ-ДД, например 2026-12-15."); return out;
+            }
             s.reset(new DateSearchStrategy(value));
-        } else if (criterion == 4) {
+        }
+        else if (criterion == 4) {
             if (value.empty() && value2.empty())
-                { out.push_back("Задайте хотя бы одну границу диапазона."); return out; }
+            {
+                out.push_back("Задайте хотя бы одну границу диапазона."); return out;
+            }
             if (!value.empty() && !isValidDate(value))
-                { out.push_back("Нижняя дата должна быть ГГГГ-ММ-ДД."); return out; }
+            {
+                out.push_back("Нижняя дата должна быть ГГГГ-ММ-ДД."); return out;
+            }
             if (!value2.empty() && !isValidDate(value2))
-                { out.push_back("Верхняя дата должна быть ГГГГ-ММ-ДД."); return out; }
+            {
+                out.push_back("Верхняя дата должна быть ГГГГ-ММ-ДД."); return out;
+            }
             s.reset(new DateRangeSearchStrategy(value, value2));
-        } else {
+        }
+        else {
             if (value.empty()) { out.push_back("Текст не задан."); return out; }
             s.reset(new TextSearchStrategy(value));
         }
