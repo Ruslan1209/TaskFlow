@@ -9,6 +9,8 @@
 #include "TaskTemplates.h"
 #include "AppSettings.h"
 #include "LegacyTodoAdapter.h"
+#include "TaskSearchStrategy.h"
+#include "TaskSortStrategy.h"
 using namespace std;
 
 // Facade: единственная дверь меню во внутренние подсистемы.
@@ -66,12 +68,38 @@ public:
         return list_.addTask(move(t));
     }
 
-    // --- пункт 2 ---
+    // --- пункт 2: показ всех задач, сортировка выбирается в меню (Strategy) ---
     bool hasTasks() const { return !list_.all().empty(); }
-    vector<string> allText() const {
+
+    vector<string> sortNames() const {
+        vector<string> v;
+        v.push_back("без сортировки (как добавлены)");
+        v.push_back("по сроку");
+        v.push_back("по приоритету");
+        v.push_back("по названию");
+        return v;
+    }
+
+    // sortMode: 0 — как добавлены, 1..3 — стратегии сортировки
+    vector<string> allText(int sortMode) const {
         vector<string> out;
-        const vector<unique_ptr<Task>>& all = list_.all();
-        for (size_t i = 0; i < all.size(); ++i) out.push_back(taskText(all[i].get()));
+        vector<Task*> ordered;
+        if (sortMode == 1) {
+            SortByDateStrategy s;
+            ordered = list_.sortedBy(s);
+        } else if (sortMode == 2) {
+            SortByPriorityStrategy s;
+            ordered = list_.sortedBy(s);
+        } else if (sortMode == 3) {
+            SortByTitleStrategy s;
+            ordered = list_.sortedBy(s);
+        } else {
+            const vector<unique_ptr<Task>>& all = list_.all();
+            for (size_t i = 0; i < all.size(); ++i)
+                ordered.push_back(all[i].get());
+        }
+        for (size_t i = 0; i < ordered.size(); ++i)
+            out.push_back(taskText(ordered[i]));
         return out;
     }
 
@@ -165,25 +193,47 @@ public:
         return "Путь изменён.";
     }
 
-    // --- пункт 8: поиск через TaskFilter ---
-    // возвращает готовые строки для печати; критерий с пустой строкой пропускается
-    vector<string> search(const string& tag, const string& date, const string& prio) const {
+    // --- пункт 8: поиск (Strategy) ---
+    vector<string> searchCriteria() const {
+        vector<string> v;
+        v.push_back("по тегу");
+        v.push_back("по приоритету");
+        v.push_back("по дате");
+        v.push_back("по диапазону дат");
+        v.push_back("по тексту в названии");
+        return v;
+    }
+
+    // criterion — номер из searchCriteria(); value/value2 — введённые значения.
+    // Фасад собирает нужную стратегию и передаёт её списку.
+    vector<string> search(int criterion, const string& value, const string& value2) {
         vector<string> out;
-        TaskFilter f;
-        bool any = false;
-        if (!tag.empty()) { f.setTag(tag); any = true; }
-        if (!date.empty()) {
-            if (!isValidDate(date)) out.push_back("Дата неверная, поиск по дате пропущен.");
-            else { f.setDate(date); any = true; }
+        unique_ptr<SearchStrategy> s;
+        if (criterion == 1) {
+            if (value.empty()) { out.push_back("Тег не задан."); return out; }
+            s.reset(new TagSearchStrategy(value));
+        } else if (criterion == 2) {
+            if (value == "1") s.reset(new PrioritySearchStrategy(Priority::High));
+            else if (value == "2") s.reset(new PrioritySearchStrategy(Priority::Medium));
+            else if (value == "3") s.reset(new PrioritySearchStrategy(Priority::Low));
+            else { out.push_back("Приоритет не понял, введите 1, 2 или 3."); return out; }
+        } else if (criterion == 3) {
+            if (!isValidDate(value))
+                { out.push_back("Дата должна быть ГГГГ-ММ-ДД, например 2026-12-15."); return out; }
+            s.reset(new DateSearchStrategy(value));
+        } else if (criterion == 4) {
+            if (value.empty() && value2.empty())
+                { out.push_back("Задайте хотя бы одну границу диапазона."); return out; }
+            if (!value.empty() && !isValidDate(value))
+                { out.push_back("Нижняя дата должна быть ГГГГ-ММ-ДД."); return out; }
+            if (!value2.empty() && !isValidDate(value2))
+                { out.push_back("Верхняя дата должна быть ГГГГ-ММ-ДД."); return out; }
+            s.reset(new DateRangeSearchStrategy(value, value2));
+        } else {
+            if (value.empty()) { out.push_back("Текст не задан."); return out; }
+            s.reset(new TextSearchStrategy(value));
         }
-        if (!prio.empty()) {
-            if (prio == "1") { f.setPriority(Priority::High); any = true; }
-            else if (prio == "2") { f.setPriority(Priority::Medium); any = true; }
-            else if (prio == "3") { f.setPriority(Priority::Low); any = true; }
-            else out.push_back("Приоритет не понял, поиск по приоритету пропущен.");
-        }
-        if (!any) { out.push_back("Задайте хотя бы один критерий."); return out; }
-        vector<Task*> found = list_.findBy(f);
+        vector<Task*> found = list_.findBy(*s);
         if (found.empty()) { out.push_back("Ничего не найдено."); return out; }
         out.push_back("Найдено задач: " + to_string(found.size()));
         for (size_t i = 0; i < found.size(); ++i) out.push_back(taskText(found[i]));
