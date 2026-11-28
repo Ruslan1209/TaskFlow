@@ -1,154 +1,35 @@
-@startuml
-title TaskFlow — ДЗ-07: Strategy, Observer, Command (шаг 4)
-
-skinparam classAttributeIconSize 0
-
-' ================== STRATEGY ==================
-package "Strategy (поиск и сортировка)" {
-
-  class TaskList {
-    +findBy(s : SearchStrategy) : vector<Task*>
-    +sortedBy(s : SortStrategy) : vector<Task*>
-    +addTask(unique_ptr<Task>) : int
-    +find(id : int) : Task*
-    +removeTask(id : int) : void
-    +clear() : void
-    +all() : vector<unique_ptr<Task>>&
-  }
-
-  interface SearchStrategy <<Strategy>> {
-    +matches(t : Task*) : bool
-  }
-
-  class TagSearchStrategy
-  class PrioritySearchStrategy
-  class DateSearchStrategy
-  class DateRangeSearchStrategy
-  class TextSearchStrategy
-
-  interface SortStrategy <<Strategy>> {
-    +compare(a : Task*, b : Task*) : bool
-  }
-
-  class SortByDateStrategy
-  class SortByPriorityStrategy
-  class SortByTitleStrategy
-
-  SearchStrategy <|.. TagSearchStrategy
-  SearchStrategy <|.. PrioritySearchStrategy
-  SearchStrategy <|.. DateSearchStrategy
-  SearchStrategy <|.. DateRangeSearchStrategy
-  SearchStrategy <|.. TextSearchStrategy
-
-  SortStrategy <|.. SortByDateStrategy
-  SortStrategy <|.. SortByPriorityStrategy
-  SortStrategy <|.. SortByTitleStrategy
-
-  TaskList ..> SearchStrategy : использует (внедрена снаружи)
-  TaskList ..> SortStrategy : использует (внедрена снаружи)
-}
-
 ' ================== OBSERVER ==================
 package "Observer (реакция на изменения)" {
 
-  interface Observer <<Observer>> {
-    +update(event : TaskEvent) : void
+  enum TaskEventType {
+    Added
+    Changed
+    Removed
+  }
+
+  interface TaskObserver <<Observer>> {
+    +~TaskObserver()
+    +{abstract} onTaskEvent(type : TaskEventType, task : Task&) : void
   }
 
   class AutoSaveObserver <<ConcreteObserver>> {
-    -filePath : string
-    +update(event : TaskEvent) : void
+    +onTaskEvent(type : TaskEventType, task : Task&) : void
   }
 
   class DeadlineObserver <<ConcreteObserver>> {
-    +update(event : TaskEvent) : void
+    +onTaskEvent(type : TaskEventType, task : Task&) : void
   }
 
   class TaskListSubject <<Subject>> {
-    +subscribe(o : Observer*) : void
-    +unsubscribe(o : Observer*) : void
-    -notifyAll(event : TaskEvent) : void
+    -observers_ : vector<TaskObserver*>
+    +subscribe(o : TaskObserver*) : void
+    +unsubscribe(o : TaskObserver*) : void
+    -notifyAll(type : TaskEventType, task : Task&) : void
   }
 
-  Observer <|.. AutoSaveObserver
-  Observer <|.. DeadlineObserver
-  TaskListSubject o-- Observer : подписчики
+  TaskObserver <|.. AutoSaveObserver
+  TaskObserver <|.. DeadlineObserver
+  TaskListSubject o-- TaskObserver : подписчики
 }
 
 TaskListSubject <|-- TaskList
-
-' ================== COMMAND ==================
-package "Command (отмена и повтор)" {
-
-  interface Command <<Command>> {
-    +execute() : string
-    +undo() : string
-  }
-
-  class AddTaskCommand <<ConcreteCommand>> {
-    -type, title, desc, prio, date, tags : string
-    -interval : int
-    -createdId : int
-    +execute() : string
-    +undo() : string
-  }
-
-  class EditTaskCommand <<ConcreteCommand>> {
-    -id : int
-    -before : TaskSnapshot
-    -after : TaskSnapshot
-    +execute() : string
-    +undo() : string
-  }
-
-  class RemoveTaskCommand <<ConcreteCommand>> {
-    -id : int
-    -removedTask : unique_ptr<Task>
-    +execute() : string
-    +undo() : string
-  }
-
-  class CommandHistory <<Invoker>> {
-    -done : vector<unique_ptr<Command>>
-    -undone : vector<unique_ptr<Command>>
-    +run(cmd) : string
-    +pushExecuted(cmd) : void
-    +undo() : string
-    +redo() : string
-    +canUndo() : bool
-    +canRedo() : bool
-    +clear() : void
-  }
-
-  Command <|.. AddTaskCommand
-  Command <|.. EditTaskCommand
-  Command <|.. RemoveTaskCommand
-
-  CommandHistory o-- Command : история (стек executed / undone)
-  Command ..> TaskList : действует на Receiver
-}
-
-' ================== FACADE ==================
-class TaskFlowFacade <<Facade>> {
-  -list_ : TaskList
-  -history_ : CommandHistory
-  +addTask(...) : int
-  +editTask(...) : string
-  +removeTask(id) : string
-  +undo() / redo() : string
-  +search(criterion, value) : vector<string>
-  +allText(sortMode) : vector<string>
-  +saveAll() / loadAll() : string
-}
-
-TaskFlowFacade ..> CommandHistory : Invoker
-TaskFlowFacade ..> TaskList
-TaskFlowFacade ..> SearchStrategy
-TaskFlowFacade ..> SortStrategy
-
-AutoSaveObserver ..> TaskListSubject : слушает изменения
-note bottom of TaskFlowFacade
-  Меню main.cpp работает
-  только через фасад.
-end note
-@enduml
