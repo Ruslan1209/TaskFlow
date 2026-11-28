@@ -28,6 +28,8 @@ int main()
         cout << "10 — импорт из внешнего списка" << endl;
         cout << "11 — отменить последнее действие" << endl;
         cout << "12 — повторить отменённое" << endl;
+        cout << "13 — загрузить из файла старого формата" << endl;
+        cout << "14 — включить/выключить автосохранение" << endl; 
         cout << "0 — выход" << endl;
         cout << "Ваш выбор: ";
 
@@ -191,7 +193,19 @@ int main()
             else if (choice == 12) {
                 cout << facade.redo() << endl;
             }
-            else if (choice == 0) {
+            else if (choice == 13)
+            {
+                cout << facade.loadLegacy() << endl;
+            }
+            else if (choice == 14) 
+            {
+            cout << facade.autoSaveText() << endl;
+            int v;
+            cin >> v;
+            cout << facade.setAutoSave(v == 1) << endl;
+            }
+            else if (choice == 0) 
+            {
                 cout << "До встречи!" << endl;
                 break;
             }
@@ -204,4 +218,3 @@ int main()
         }
     }
 }
-
