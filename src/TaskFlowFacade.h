@@ -12,30 +12,21 @@
 #include "TaskSearchStrategy.h"
 #include "TaskSortStrategy.h"
 #include "TaskObservers.h"
+#include "TaskCommand.h"
 using namespace std;
 
 // Facade: единственная дверь меню во внутренние подсистемы.
-// В main.cpp подключается только этот заголовок — ни списка,
-// ни хранилища, ни фабрик меню не видит.
+// Теперь каждое изменение проходит через Command и попадает в историю.
 class TaskFlowFacade {
     TaskList list_;
-    AutoSaveObserver* autoSave_;   // Observer: владеет подписчиками фасад
+    AutoSaveObserver* autoSave_;
     DeadlineObserver* deadline_;
+    CommandHistory history_;
 
-    // разбор строки тегов "a, b, c" -> вектор без лишних пробелов
     static vector<string> splitTags(const string& line) {
-        vector<string> tags;
-        string part;
-        istringstream iss(line);
-        while (getline(iss, part, ',')) {
-            size_t a = part.find_first_not_of(" \t");
-            size_t b = part.find_last_not_of(" \t");
-            if (a != string::npos) tags.push_back(part.substr(a, b - a + 1));
-        }
-        return tags;
+        return splitTagsList(line);
     }
 
-    // единый вид строки задачи (бывший printTask из main)
     static string taskText(const Task* t) {
         ostringstream os;
         os << "#" << t->getId() << " [" << statusName(t->getStatus()) << "] "
@@ -57,14 +48,12 @@ class TaskFlowFacade {
 public:
     TaskFlowFacade() {
         AppSettings::instance().loadSettings();
-        // Observer: подписываемся на старте программы
         autoSave_ = new AutoSaveObserver(list_);
         deadline_ = new DeadlineObserver();
         list_.subscribe(autoSave_);
         list_.subscribe(deadline_);
     }
 
-    // Observer: подписчики отписываются, когда перестают существовать
     ~TaskFlowFacade() {
         list_.unsubscribe(autoSave_);
         list_.unsubscribe(deadline_);
@@ -72,21 +61,21 @@ public:
         delete deadline_;
     }
 
-    // --- пункт 1: создание задачи (Builder + Factory Method) ---
+    // --- пункт 1: создание (Builder + Factory Method) — теперь через Command ---
     vector<string> taskTypes() const { return TaskFactory::instance().typeNames(); }
 
     int addTask(const string& type, const string& title, const string& desc,
                 Priority prio, const string& date, const string& tagsLine,
                 int intervalDays) {
-        TaskBuilder b;
-        b.forType(type).title(title).description(desc)
-         .priority(prio).date(date).tags(splitTags(tagsLine));
-        if (intervalDays > 0) b.intervalDays(intervalDays);
-        unique_ptr<Task> t = b.build(); // ошибка данных -> исключение, ловит меню
-        return list_.addTask(move(t));
+        unique_ptr<AddTaskCommand> cmd(
+            new AddTaskCommand(list_, type, title, desc, prio,
+                               date, tagsLine, intervalDays));
+        AddTaskCommand* raw = cmd.get();
+        history_.run(move(cmd));   // если данные плохие — Builder бросит исключение до записи
+        return raw->id();
     }
 
-    // --- пункт 2: показ всех задач, сортировка выбирается в меню (Strategy) ---
+    // --- пункт 2 ---
     bool hasTasks() const { return !list_.all().empty(); }
 
     vector<string> sortNames() const {
@@ -98,7 +87,6 @@ public:
         return v;
     }
 
-    // sortMode: 0 — как добавлены, 1..3 — стратегии сортировки
     vector<string> allText(int sortMode) const {
         vector<string> out;
         vector<Task*> ordered;
@@ -121,13 +109,12 @@ public:
         return out;
     }
 
-    // --- пункт 3: редактирование. Пустая строка = оставить прежнее ---
+    // --- пункт 3: редактирование — тоже Command ---
     bool hasTask(int id) { return list_.find(id) != nullptr; }
     string typeNameOf(int id) {
         Task* t = list_.find(id);
         return t ? t->typeName() : "";
     }
-    // старое значение поля для подсказки "[текущее]" в меню
     string fieldOf(int id, const string& field) {
         Task* t = list_.find(id);
         if (!t) return "";
@@ -144,38 +131,46 @@ public:
                     const string& date, const string& tagsLine) {
         Task* t = list_.find(id);
         if (!t) return "Задача с номером " + to_string(id) + " не найдена.";
-        if (!title.empty()) t->setTitle(title);
-        if (!desc.empty()) t->setDescription(desc);
+        TaskSnapshot before = TaskSnapshot::capture(t);
+        TaskSnapshot after = before;
+        if (!title.empty()) after.title = title;
+        if (!desc.empty()) after.desc = desc;
         if (!prio.empty()) {
-            if (prio == "1") t->setPriority(Priority::High);
-            else if (prio == "2") t->setPriority(Priority::Medium);
-            else if (prio == "3") t->setPriority(Priority::Low);
+            if (prio == "1") after.priority = Priority::High;
+            else if (prio == "2") after.priority = Priority::Medium;
+            else if (prio == "3") after.priority = Priority::Low;
             else return "Приоритет не понял, оставляю старый.";
         }
         if (!status.empty()) {
-            if (status == "1") t->setStatus(Status::New);
-            else if (status == "2") t->setStatus(Status::InProgress);
-            else if (status == "3") t->setStatus(Status::Done);
+            if (status == "1") after.status = Status::New;
+            else if (status == "2") after.status = Status::InProgress;
+            else if (status == "3") after.status = Status::Done;
             else return "Статус не понял, оставляю старый.";
         }
         if (!date.empty()) {
             if (!isValidDate(date))
                 return "Дата должна быть ГГГГ-ММ-ДД, например 2026-12-15.";
-            t->setDate(date);
+            after.date = date;
         }
-        if (!tagsLine.empty()) t->setTags(splitTags(tagsLine));
-        // Observer: редактирование — это тоже изменение списка
-        list_.notifyObservers(TaskEventType::Changed, *t);
+        if (!tagsLine.empty()) after.tags = splitTags(tagsLine);
+        // применяем через команду: execute + фиксация в истории
+        unique_ptr<EditTaskCommand> cmd(
+            new EditTaskCommand(list_, id, before, after));
+        cmd->execute();
+        history_.pushExecuted(move(cmd));
         return "Задача обновлена.";
     }
 
-    // --- пункт 4 ---
+    // --- пункт 4: удаление — Command со снимком задачи ---
     string removeTask(int id) {
-        if (list_.removeTask(id)) return "Задача #" + to_string(id) + " удалена.";
-        return "Задача с номером " + to_string(id) + " не найдена.";
+        Task* t = list_.find(id);
+        if (!t) return "Задача с номером " + to_string(id) + " не найдена.";
+        unique_ptr<RemoveTaskCommand> cmd(
+            new RemoveTaskCommand(list_, id, t->clone()));
+        return history_.run(move(cmd));
     }
 
-    // --- пункты 5 и 6: сохранение и загрузка (Abstract Factory из ДЗ-5) ---
+    // --- пункты 5 и 6 ---
     string saveAll() {
         AppSettings& s = AppSettings::instance();
         unique_ptr<ITaskStorage> st = s.factory().createTaskStorage();
@@ -188,12 +183,13 @@ public:
         AppSettings& s = AppSettings::instance();
         unique_ptr<ITaskStorage> st = s.factory().createTaskStorage();
         list_.clear();
+        history_.clear();   // после загрузки история прошлого списка не имеет смысла
         int n = st->load(list_, s.getPathToFile());
         if (n < 0) return "Не удалось открыть файл: " + s.getPathToFile();
         return "Загружено задач: " + to_string(n) + ". Номера пересчитаны заново.";
     }
 
-    // --- пункт 7: настройки (Singleton из ДЗ-5) ---
+    // --- пункт 7 ---
     string settingsText() const {
         AppSettings& s = AppSettings::instance();
         return "Настройки. Текущий формат: " + s.getFormat() +
@@ -213,7 +209,7 @@ public:
         return "Путь изменён.";
     }
 
-    // --- пункт 8: поиск (Strategy) ---
+    // --- пункт 8 ---
     vector<string> searchCriteria() const {
         vector<string> v;
         v.push_back("по тегу");
@@ -224,8 +220,6 @@ public:
         return v;
     }
 
-    // criterion — номер из searchCriteria(); value/value2 — введённые значения.
-    // Фасад собирает нужную стратегию и передаёт её списку.
     vector<string> search(int criterion, const string& value, const string& value2) {
         vector<string> out;
         unique_ptr<SearchStrategy> s;
@@ -260,7 +254,7 @@ public:
         return out;
     }
 
-    // --- пункт 9: создать из шаблона (Prototype) ---
+    // --- пункт 9: шаблоны (Prototype) тоже попадают в историю через addTask ---
     vector<string> templateTexts() const {
         vector<string> names = TaskTemplates::instance().names();
         vector<string> out;
@@ -280,7 +274,7 @@ public:
         return list_.addTask(move(t));
     }
 
-    // --- пункт 10: импорт из внешнего списка (Adapter) ---
+    // --- пункт 10: импорт (Adapter) ---
     vector<string> importLegacy() {
         LegacyTodoAdapter adapter;
         vector<unique_ptr<Task>> imported = adapter.importAll();
@@ -291,6 +285,12 @@ public:
         }
         return out;
     }
+
+    // --- пункты 11 и 12: Отменить и Повторить ---
+    string undo() { return history_.undo(); }
+    string redo() { return history_.redo(); }
+    bool canUndo() const { return history_.canUndo(); }
+    bool canRedo() const { return history_.canRedo(); }
 };
 
 #endif // TASKFLOWFACADE_H
