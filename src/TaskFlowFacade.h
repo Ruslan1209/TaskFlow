@@ -13,6 +13,7 @@
 #include "TaskSortStrategy.h"
 #include "TaskObservers.h"
 #include "TaskCommand.h"
+#include "LegacyFileAdapter.h"
 using namespace std;
 
 // Facade: единственная дверь меню во внутренние подсистемы.
