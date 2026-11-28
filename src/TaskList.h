@@ -3,6 +3,7 @@
 #include <memory>
 #include "Task.h"
 #include "TaskFilter.h"
+#include "TaskObserver.h"
 #include "TaskSearchStrategy.h"
 #include "TaskSortStrategy.h"
 using namespace std;
@@ -10,12 +11,28 @@ using namespace std;
 class TaskList {
 private:
     vector<unique_ptr<Task>> tasks_;   // композиция: список владеет задачами
+    vector<TaskObserver*> observers_;  // Observer: подписчики издателя
     int nextId = 1;                    // источник уникальных номеров — только здесь
 public:
+    // --- Observer: подписка, отписка, оповещение ---
+    void subscribe(TaskObserver* o) { observers_.push_back(o); }
+    void unsubscribe(TaskObserver* o) {
+        for (size_t i = 0; i < observers_.size(); ++i)
+            if (observers_[i] == o) {
+                observers_.erase(observers_.begin() + i);
+                return;
+            }
+    }
+    void notifyObservers(TaskEventType type, const Task& t) {
+        for (size_t i = 0; i < observers_.size(); ++i)
+            observers_[i]->onTaskEvent(type, t);
+    }
+
     int addTask(unique_ptr<Task> task) {
         int id = nextId++;
         task->setId(id);
         tasks_.push_back(move(task));
+        notifyObservers(TaskEventType::Added, *tasks_.back());
         return id;
     }
 
@@ -40,7 +57,9 @@ public:
     bool removeTask(int id) {
         for (size_t i = 0; i < tasks_.size(); ++i)
             if (tasks_[i]->getId() == id) {
+                unique_ptr<Task> copy = tasks_[i]->clone(); // копия для подписчиков
                 tasks_.erase(tasks_.begin() + i);
+                notifyObservers(TaskEventType::Removed, *copy);
                 return true;
             }
         return false;
