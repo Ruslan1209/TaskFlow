@@ -1,0 +1,54 @@
+@startuml
+title TaskFlow — «Удалить задачу → Отменить» (шаг 4)
+
+actor Пользователь
+participant "Меню (main.cpp)" as Menu
+participant "TaskFlowFacade\n<<Facade>>" as Facade
+participant "CommandHistory\n<<Invoker>>" as History
+participant "RemoveTaskCommand\n<<ConcreteCommand>>" as Cmd
+participant "TaskList\n<<Receiver>>" as List
+participant "Observer'ы\n(автосохранение, сроки)" as Obs
+
+== Пользователь выбирает «Удалить» и вводит номер ==
+Пользователь -> Menu : пункт 4, номер задачи
+Menu -> Facade : removeTask(id)
+Facade -> List : find(id)
+List --> Facade : Task* t (или nullptr)
+alt задача не найдена
+  Facade --> Menu : "Задача с номером ... не найдена."
+else задача найдена
+  Facade -> Cmd : new RemoveTaskCommand(id, t->clone())
+  note right of Cmd : команда хранит снимок задачи —\nданные для отмены
+  Facade -> History : run(move(cmd))
+  History -> Cmd : execute()
+  Cmd -> List : removeTask(id)
+  List -> Obs : notifyAll(событие "удаление")
+  Obs --> List : автосохранение перезаписывает файл
+  Cmd --> History : результат
+  History --> Facade : "Задача удалена."
+  Facade --> Menu : сообщение
+  Menu --> Пользователь : вывод
+end
+
+== Пользователь выбирает «Отменить» ==
+Пользователь -> Menu : пункт 11 (Отменить)
+Menu -> Facade : undo()
+alt история пуста
+  History --> Facade : "Отменять нечего."
+else есть выполненные команды
+  Facade -> History : undo()
+  History -> Cmd : undo()
+  Cmd -> List : addTask(восстановленная задача)
+  List -> Obs : notifyAll(событие "добавление")
+  Obs --> List : автосохранение срабатывает и здесь
+  Cmd --> History : результат
+  History --> Facade : "Отменено: удаление задачи #N."
+  Facade --> Menu : сообщение
+  Menu --> Пользователь : вывод
+end
+
+note over History, Cmd
+  После нового действия redo невозможен:
+  History.run() очищает стек undone.
+end note
+@enduml
