@@ -10,9 +10,9 @@ using namespace std;
 
 class TaskList {
 private:
-    vector<unique_ptr<Task>> tasks_;   // композиция: список владеет задачами
-    vector<TaskObserver*> observers_;  // Observer: подписчики издателя
-    int nextId = 1;                    // источник уникальных номеров — только здесь
+    vector<unique_ptr<Task>> tasks_;
+    vector<TaskObserver*> observers_;
+    int nextId = 1;
 public:
     // --- Observer: подписка, отписка, оповещение ---
     void subscribe(TaskObserver* o) { observers_.push_back(o); }
@@ -36,6 +36,13 @@ public:
         return id;
     }
 
+    // возврат задачи с прежним номером (Command: отмена удаления)
+    void restoreTask(unique_ptr<Task> task) {
+        if (task->getId() >= nextId) nextId = task->getId() + 1;
+        tasks_.push_back(move(task));
+        notifyObservers(TaskEventType::Added, *tasks_.back());
+    }
+
     // правим поля существующей задачи на месте — не пересоздаём объект
     bool editTask(int id, const Task& patch) {
         Task* t = find(id);
@@ -57,7 +64,7 @@ public:
     bool removeTask(int id) {
         for (size_t i = 0; i < tasks_.size(); ++i)
             if (tasks_[i]->getId() == id) {
-                unique_ptr<Task> copy = tasks_[i]->clone(); // копия для подписчиков
+                unique_ptr<Task> copy = tasks_[i]->clone();
                 tasks_.erase(tasks_.begin() + i);
                 notifyObservers(TaskEventType::Removed, *copy);
                 return true;
@@ -65,7 +72,6 @@ public:
         return false;
     }
 
-    // полная очистка списка перед загрузкой из файла (шаг 4)
     void clear() { tasks_.clear(); nextId = 1; }
 
     int nextTaskId() const { return nextId; }
@@ -73,8 +79,6 @@ public:
 
     const vector<unique_ptr<Task>>& all() const { return tasks_; }
 
-    // Strategy: критерий поиска список получает снаружи,
-    // внутри списка нет ни одного if по виду критерия
     vector<Task*> findBy(const SearchStrategy& s) const {
         vector<Task*> result;
         for (size_t i = 0; i < tasks_.size(); ++i)
@@ -82,7 +86,6 @@ public:
         return result;
     }
 
-    // Strategy: порядок сортировки тоже приходит снаружи
     vector<Task*> sortedBy(const SortStrategy& s) const {
         vector<Task*> result;
         for (size_t i = 0; i < tasks_.size(); ++i) result.push_back(tasks_[i].get());
