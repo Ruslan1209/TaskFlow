@@ -11,6 +11,7 @@
 #include "LegacyTodoAdapter.h"
 #include "TaskSearchStrategy.h"
 #include "TaskSortStrategy.h"
+#include "TaskObservers.h"
 using namespace std;
 
 // Facade: единственная дверь меню во внутренние подсистемы.
@@ -18,6 +19,8 @@ using namespace std;
 // ни хранилища, ни фабрик меню не видит.
 class TaskFlowFacade {
     TaskList list_;
+    AutoSaveObserver* autoSave_;   // Observer: владеет подписчиками фасад
+    DeadlineObserver* deadline_;
 
     // разбор строки тегов "a, b, c" -> вектор без лишних пробелов
     static vector<string> splitTags(const string& line) {
@@ -52,7 +55,22 @@ class TaskFlowFacade {
     }
 
 public:
-    TaskFlowFacade() { AppSettings::instance().loadSettings(); }
+    TaskFlowFacade() {
+        AppSettings::instance().loadSettings();
+        // Observer: подписываемся на старте программы
+        autoSave_ = new AutoSaveObserver(list_);
+        deadline_ = new DeadlineObserver();
+        list_.subscribe(autoSave_);
+        list_.subscribe(deadline_);
+    }
+
+    // Observer: подписчики отписываются, когда перестают существовать
+    ~TaskFlowFacade() {
+        list_.unsubscribe(autoSave_);
+        list_.unsubscribe(deadline_);
+        delete autoSave_;
+        delete deadline_;
+    }
 
     // --- пункт 1: создание задачи (Builder + Factory Method) ---
     vector<string> taskTypes() const { return TaskFactory::instance().typeNames(); }
@@ -146,6 +164,8 @@ public:
             t->setDate(date);
         }
         if (!tagsLine.empty()) t->setTags(splitTags(tagsLine));
+        // Observer: редактирование — это тоже изменение списка
+        list_.notifyObservers(TaskEventType::Changed, *t);
         return "Задача обновлена.";
     }
 
