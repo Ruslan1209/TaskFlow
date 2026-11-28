@@ -95,7 +95,17 @@ int main() {
             break;
         }
         case 2: {
-            vector<string> all = app.allText();
+            // Strategy: показ всех с выбором сортировки
+            vector<string> sorts = app.sortNames();
+            cout << "Сортировка:\n";
+            for (size_t i = 0; i < sorts.size(); ++i)
+                cout << "  " << (i + 1) << "-" << sorts[i] << "\n";
+            int sm = readInt("Сортировка: ");
+            if (sm < 1 || sm > (int)sorts.size()) {
+                cout << "Нет такой сортировки.\n";
+                break;
+            }
+            vector<string> all = app.allText(sm - 1);
             if (all.empty()) { cout << "Список пуст.\n"; break; }
             for (size_t i = 0; i < all.size(); ++i) cout << all[i] << "\n";
             break;
@@ -150,10 +160,25 @@ int main() {
             break;
         }
         case 8: {
-            string tag = readLine("Тег для поиска (Enter — пропустить): ");
-            string date = readLine("Дата для поиска ГГГГ-ММ-ДД (Enter — пропустить): ");
-            string prio = readLine("Приоритет 1-высокий, 2-средний, 3-низкий (Enter — пропустить): ");
-            vector<string> out = app.search(tag, date, prio);
+            // Strategy: выбор критерия -> одна стратегия -> список ищет сам
+            vector<string> crits = app.searchCriteria();
+            cout << "Критерий поиска:\n";
+            for (size_t i = 0; i < crits.size(); ++i)
+                cout << "  " << (i + 1) << "-" << crits[i] << "\n";
+            int c = readInt("Критерий: ");
+            if (c < 1 || c > (int)crits.size()) {
+                cout << "Нет такого критерия.\n";
+                break;
+            }
+            string value, value2;
+            if (c == 1) value = readLine("Тег: ");
+            else if (c == 2) value = readLine("Приоритет 1-высокий, 2-средний, 3-низкий: ");
+            else if (c == 3) value = readLine("Дата ГГГГ-ММ-ДД: ");
+            else if (c == 4) {
+                value = readLine("Дата от ГГГГ-ММ-ДД (Enter — без нижней границы): ");
+                value2 = readLine("Дата до ГГГГ-ММ-ДД (Enter — без верхней границы): ");
+            } else value = readLine("Текст в названии: ");
+            vector<string> out = app.search(c, value, value2);
             for (size_t i = 0; i < out.size(); ++i) cout << out[i] << "\n";
             break;
         }
