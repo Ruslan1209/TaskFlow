@@ -1,13 +1,13 @@
-@startuml 02_class_domain
-title TaskFlow: диаграмма классов (домен и порождающие паттерны)
 
-hide circle
+@startuml
+title TaskFlow — доменная модель (обновлено на ДЗ-07)
+
 skinparam classAttributeIconSize 0
 
 enum Priority {
-  High = 1
-  Medium = 2
-  Low = 3
+  High
+  Medium
+  Low
 }
 
 enum Status {
@@ -16,300 +16,139 @@ enum Status {
   Done
 }
 
-class Task {
-  - id : int
-  - title : string
-  - description : string
-  - date : string
-  - priority : Priority
-  - status : Status
-  - tags : vector<string>
-  + getId() : int
-  + setId(newId : int) : void
-  + getTitle() : string
-  + setTitle(t : string) : void
-  + getDescription() : string
-  + setDescription(d : string) : void
-  + getDate() : string
-  + setDate(d : string) : void
-  + getPriority() : Priority
-  + setPriority(p : Priority) : void
-  + getStatus() : Status
-  + setStatus(s : Status) : void
-  + getTags() : vector<string>
-  + setTags(t : vector<string>) : void
-  + typeName() : string
-  + extraInfo() : string
-  + clone() : unique_ptr<Task>
-  + matchesTag(tag : string) : bool
-  + matchesDate(d : string) : bool
-  + matchesPriority(p : Priority) : bool
-}
-
-class SimpleTask {
-  + typeName() : string
-  + extraInfo() : string
-  + clone() : unique_ptr<Task>
-}
-
-class DeadlineTask {
-  - deadline_ : string
-  + setDeadline(d : string) : void
-  + getDeadline() : string
-  + typeName() : string
-  + extraInfo() : string
-  + clone() : unique_ptr<Task>
+class Task <<Abstract>> {
+  #id : int
+  #title : string
+  #description : string
+  #date : string
+  #priority : Priority
+  #status : Status
+  #tags : vector<string>
+  +getId() / getTitle() / getDate() ...
+  +setTitle(...)/setDescription(...)/setDate(...)
+  +setPriority(...)/setStatus(...)/setTags(...)
+  +typeName() : string
+  +extraInfo() : string
+  +clone() : Task*
 }
 
 class RecurringTask {
-  - intervalDays_ : int
-  + getInterval() : int
-  + setInterval(n : int) : void
-  + typeName() : string
-  + extraInfo() : string
-  + clone() : unique_ptr<Task>
+  -interval : int
+  +setInterval(int)
+  +extraInfo() : string
 }
 
-interface TaskCreator <<Creator>> {
-  + typeName() : string
-  + create() : unique_ptr<Task>
+class TaskBuilder {
+  +forType(type) : TaskBuilder&
+  +title(t) : TaskBuilder&
+  +description(d) : TaskBuilder&
+  +priority(p) : TaskBuilder&
+  +date(d) : TaskBuilder&
+  +tags(line) : TaskBuilder&
+  +interval(days) : TaskBuilder&
+  +build() : unique_ptr<Task>
 }
 
-class SimpleTaskCreator <<ConcreteCreator>> {
-  + create() : unique_ptr<Task>
-}
-
-class DeadlineTaskCreator <<ConcreteCreator>> {
-  + create() : unique_ptr<Task>
-}
-
-class RecurringTaskCreator <<ConcreteCreator>> {
-  + create() : unique_ptr<Task>
-}
-
-class TaskFactory <<Singleton>> {
-  - creators : vector<unique_ptr<TaskCreator>>
-  - TaskFactory()
-  + instance() : TaskFactory&
-  + create(type : string) : unique_ptr<Task>
-  + typeNames() : vector<string>
-}
-
-class TaskList {
-  - tasks_ : vector<unique_ptr<Task>>
-  - nextId : int
-  + addTask(task : unique_ptr<Task>) : int
-  + editTask(id : int, patch : const Task&) : bool
-  + find(id : int) : Task*
-  + removeTask(id : int) : bool
-  + clear() : void
-  + nextTaskId() : int
-  + bumpNextTaskId(v : int) : void
-  + all() : const vector<unique_ptr<Task>>&
-  + findBy(filter : const TaskFilter&) : vector<Task*>
-  + sortedByDate() : vector<Task*>
-}
-
-class TaskFilter {
-  - tag_ : string
-  - date_ : string
-  - priority_ : Priority
-  - prioritySet_ : bool
-  + setTag(tag : string) : void
-  + setDate(date : string) : void
-  + setPriority(p : Priority) : void
-  + matches(task : const Task&) : bool
-}
-
-class AppSettings <<Singleton>> {
-  - pathToFile : string
-  - format : string
-  - factory_ : unique_ptr<IStorageFactory>
-  - AppSettings()
-  + instance() : AppSettings&
-  + getPathToFile() : string
-  + getFormat() : string
-  + setPathToFile(p : string) : void
-  + setFormat(f : string) : void
-  + factory() : IStorageFactory&
-  + saveSettings() : bool
-  + loadSettings() : bool
-}
-
-interface ITaskStorage {
-  + save(list : const TaskList&, path : const string&) : bool
-  + load(list : TaskList&, path : const string&) : int
-}
-
-class TxtTaskStorage {
-  + save(list : const TaskList&, path : const string&) : bool
-  + load(list : TaskList&, path : const string&) : int
-}
-
-class CsvTaskStorage {
-  + save(list : const TaskList&, path : const string&) : bool
-  + load(list : TaskList&, path : const string&) : int
-}
-
-interface ISettingsStorage {
-  + save(taskPath : const string&, format : const string&) : bool
-  + load(taskPath : string&, format : string&) : bool
-}
-
-class TxtSettingsStorage {
-  + save(taskPath : const string&, format : const string&) : bool
-  + load(taskPath : string&, format : string&) : bool
-}
-
-class CsvSettingsStorage {
-  + save(taskPath : const string&, format : const string&) : bool
-  + load(taskPath : string&, format : string&) : bool
-}
-
-interface IStorageFactory <<AbstractFactory>> {
-  + formatName() : string
-  + createTaskStorage() : unique_ptr<ITaskStorage>
-  + createSettingsStorage() : unique_ptr<ISettingsStorage>
-}
-
-class TxtStorageFactory {
-  + formatName() : string
-  + createTaskStorage() : unique_ptr<ITaskStorage>
-  + createSettingsStorage() : unique_ptr<ISettingsStorage>
-}
-
-class CsvStorageFactory {
-  + formatName() : string
-  + createTaskStorage() : unique_ptr<ITaskStorage>
-  + createSettingsStorage() : unique_ptr<ISettingsStorage>
-}
-
-class TaskService {
-  - taskList : TaskList*
-  + validate(title : string, priority : int) : bool
-  + addTask(title : string, priority : int) : bool
-  + removeTask(id : int) : bool
-  + setTaskList(list : TaskList*) : void
-}
-
-class TaskBuilder <<Builder>> {
-  - type_ : string
-  - title_ : string
-  - description_ : string
-  - date_ : string
-  - priority_ : Priority
-  - prioritySet_ : bool
-  - tags_ : vector<string>
-  - intervalDays_ : int
-  + forType(t : string) : TaskBuilder&
-  + title(s : string) : TaskBuilder&
-  + description(s : string) : TaskBuilder&
-  + date(s : string) : TaskBuilder&
-  + priority(p : Priority) : TaskBuilder&
-  + tags(t : vector<string>) : TaskBuilder&
-  + intervalDays(n : int) : TaskBuilder&
-  + build() : unique_ptr<Task>
+class TaskFactory <<Factory Method>> {
+  {static} +instance() : TaskFactory&
+  +typeNames() : vector<string>
+  +create(type) : unique_ptr<Task>
 }
 
 class TaskTemplates <<Prototype>> {
-  - protos : vector<pair<string, unique_ptr<Task> > >
-  - TaskTemplates()
-  + instance() : TaskTemplates&
-  + names() : vector<string>
-  + createFrom(idx : size_t) : unique_ptr<Task>
+  {static} +instance() : TaskTemplates&
+  +names() : vector<string>
+  +createFrom(i) : unique_ptr<Task>
 }
 
-class TaskFlowFacade <<Facade>> {
-  - list_ : TaskList
-  + taskTypes() : vector<string>
-  + addTask(type : string, title : string, desc : string, prio : Priority, date : string, tagsLine : string, intervalDays : int) : int
-  + allText() : vector<string>
-  + hasTask(id : int) : bool
-  + typeNameOf(id : int) : string
-  + fieldOf(id : int, field : string) : string
-  + editTask(id : int, title : string, desc : string, prio : string, status : string, date : string, tagsLine : string) : string
-  + removeTask(id : int) : string
-  + saveAll() : string
-  + loadAll() : string
-  + settingsText() : string
-  + setFormat(f : string) : string
-  + setPath(p : string) : string
-  + search(tag : string, date : string, prio : string) : vector<string>
-  + templateTexts() : vector<string>
-  + addFromTemplate(idx : size_t, title : string) : int
-  + importLegacy() : vector<string>
+class TaskSnapshot {
+  +capture(t : Task*) : TaskSnapshot
+  +title/desc/priority/status/date/tags
 }
 
-interface ITaskImporter <<Target>> {
-  + importAll() : vector<unique_ptr<Task> >
+class TaskList {
+  +addTask(unique_ptr<Task>) : int
+  +removeTask(id) : void
+  +find(id) : Task*
+  +all() : vector<unique_ptr<Task>>&
+  +clear() : void
+  +findBy(s) : vector<Task*>
+  +sortedBy(s) : vector<Task*>
+  +subscribe(o) / unsubscribe(o)
 }
 
-class LegacyTodoAdapter <<Adapter>> {
-  - legacy : LegacyTodo
-  - mapPriority(p : int) : Priority
-  - dateFromUnix(sec : long long) : string
-  + importAll() : vector<unique_ptr<Task> >
+interface ITaskStorage <<Adapter>> {
+  +save(list, path) : bool
+  +load(list, path) : int
 }
 
-class LegacyTodo <<Adaptee>> {
-  + exportAll() : vector<LegacyItem>
+class TxtTaskStorage
+class CsvTaskStorage
+class FileStorage
+class LegacyFileAdapter <<Adapter>>
+class LegacyTodoAdapter <<Adapter>>
+
+class AppSettings <<Singleton>> {
+  {static} +instance() : AppSettings&
+  +getPathToFile()/setPathToFile(...)
+  +getFormat()/setFormat(f)
+  +factory() : SettingsFactory
+  +loadSettings()/saveSettings()
 }
 
-class LegacyItem {
-  + text : string
-  + prio : int
-  + dueUnix : long long
+class AppConfig <<Singleton>> {
+  {static} +instance() : AppConfig&
+  +getAutoSave()/setAutoSave(v)
 }
 
-Task <|-- SimpleTask
-Task <|-- DeadlineTask
+class TaskFlowFacade <<Facade>>
+
+class Observer <<Observer>> {
+  +update(event) : void
+}
+class AutoSaveObserver
+class DeadlineObserver
+
+interface SearchStrategy <<Strategy>>
+interface SortStrategy <<Strategy>>
+interface Command <<Command>>
+class AddTaskCommand
+class EditTaskCommand
+class RemoveTaskCommand
+class CommandHistory <<Invoker>>
+
 Task <|-- RecurringTask
-TaskCreator <|.. SimpleTaskCreator
-TaskCreator <|.. DeadlineTaskCreator
-TaskCreator <|.. RecurringTaskCreator
-TaskFactory *-- TaskCreator : реестр создателей
 TaskFactory ..> Task : создаёт
-SimpleTaskCreator ..> SimpleTask : создаёт
-DeadlineTaskCreator ..> DeadlineTask : создаёт
-RecurringTaskCreator ..> RecurringTask : создаёт
+TaskBuilder ..> Task : собирает
+TaskTemplates ..> Task : копирует-прототип
+TaskSnapshot ..> Task : снимок состояния
+TaskList "1" o-- "0..*" Task : хранит unique_ptr
+TaskList ..> SearchStrategy
+TaskList ..> SortStrategy
+TaskList o-- Observer : подписчики
 
-TaskList *-- Task : владеет задачами
-TaskList ..> TaskFilter : findBy()
-TaskFilter ..> Task : matches()
-
-AppSettings o-- IStorageFactory : хранит выбранное семейство
-IStorageFactory <|.. TxtStorageFactory
-IStorageFactory <|.. CsvStorageFactory
 ITaskStorage <|.. TxtTaskStorage
 ITaskStorage <|.. CsvTaskStorage
-ISettingsStorage <|.. TxtSettingsStorage
-ISettingsStorage <|.. CsvSettingsStorage
-IStorageFactory ..> ITaskStorage : создаёт
-IStorageFactory ..> ISettingsStorage : создаёт
-ITaskStorage ..> Task : save/load
-ITaskStorage ..> TaskFactory : восстанавливает по типу
-Task ..> Priority
-Task ..> Status
-TaskFilter ..> Priority
+ITaskStorage <|.. FileStorage
+ITaskStorage <|.. LegacyFileAdapter
+LegacyTodoAdapter ..> Task : импортирует
 
-' --- новые паттерны ДЗ-6 ---
-TaskFlowFacade *-- TaskList : владеет списком
-TaskFlowFacade ..> TaskFilter : search()
-TaskFlowFacade ..> TaskBuilder : addTask()
-TaskFlowFacade ..> TaskTemplates : пункт 9
-TaskFlowFacade ..> AppSettings : пункты 5-7
-TaskFlowFacade ..> ITaskImporter : пункт 10
+Command <|.. AddTaskCommand
+Command <|.. EditTaskCommand
+Command <|.. RemoveTaskCommand
+AddTaskCommand ..> TaskBuilder
+EditTaskCommand ..> TaskSnapshot
+RemoveTaskCommand ..> Task : снимок (clone)
+CommandHistory o-- Command
+Observer <|.. AutoSaveObserver
+Observer <|.. DeadlineObserver
 
-TaskBuilder ..> TaskFactory : create(type)
-TaskBuilder ..> Task : собирает
-
-TaskTemplates o-- Task : protos : шаблоны
-TaskTemplates ..> Task : createFrom() = clone()
-
-ITaskImporter <|.. LegacyTodoAdapter
-LegacyTodoAdapter o-- LegacyTodo : оборачивает
-LegacyTodo o-- LegacyItem
-LegacyTodoAdapter ..> TaskBuilder : создание задачи
-
-TaskService o-- TaskList : указатель на список
+TaskFlowFacade o-- TaskList
+TaskFlowFacade o-- CommandHistory
+TaskFlowFacade ..> AppSettings
+TaskFlowFacade ..> AppConfig
+TaskFlowFacade ..> ITaskStorage
+TaskFlowFacade ..> LegacyFileAdapter
+TaskFlowFacade ..> LegacyTodoAdapter
+TaskFlowFacade ..> TaskTemplates
 @enduml
