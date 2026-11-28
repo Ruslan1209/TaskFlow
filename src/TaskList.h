@@ -3,6 +3,8 @@
 #include <memory>
 #include "Task.h"
 #include "TaskFilter.h"
+#include "TaskSearchStrategy.h"
+#include "TaskSortStrategy.h"
 using namespace std;
 
 class TaskList {
@@ -51,6 +53,26 @@ public:
     void bumpNextTaskId(int v) { if (v >= nextId) nextId = v + 1; }
 
     const vector<unique_ptr<Task>>& all() const { return tasks_; }
+
+    // Strategy: критерий поиска список получает снаружи,
+    // внутри списка нет ни одного if по виду критерия
+    vector<Task*> findBy(const SearchStrategy& s) const {
+        vector<Task*> result;
+        for (size_t i = 0; i < tasks_.size(); ++i)
+            if (s.matches(*tasks_[i])) result.push_back(tasks_[i].get());
+        return result;
+    }
+
+    // Strategy: порядок сортировки тоже приходит снаружи
+    vector<Task*> sortedBy(const SortStrategy& s) const {
+        vector<Task*> result;
+        for (size_t i = 0; i < tasks_.size(); ++i) result.push_back(tasks_[i].get());
+        for (size_t i = 0; i + 1 < result.size(); ++i)
+            for (size_t j = 0; j + 1 < result.size() - i; ++j)
+                if (s.earlier(*result[j + 1], *result[j]))
+                    swap(result[j], result[j + 1]);
+        return result;
+    }
 
     vector<Task*> findBy(const TaskFilter& filter) const {
         vector<Task*> result;
