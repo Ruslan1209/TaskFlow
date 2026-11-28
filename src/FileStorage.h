@@ -1,24 +1,23 @@
-
-// FileStorage.h
 #pragma once
+// FileStorage.h
+// Хранилище из предыдущих домашних заданий. Оставлено в проекте,
+// методы приведены к общему интерфейсу ITaskStorage.
+#ifndef FILESTORAGE_H
+#define FILESTORAGE_H
+
 #include <string>
-#include "ITaskStorage.h"
+#include "TaskStorage.h"
 using namespace std;
 
-// Базовый класс файловых хранилищ: реализует интерфейс
 class FileStorage : public ITaskStorage {
-protected:
-    string filename_;
 public:
-    explicit FileStorage(const string& filename) : filename_(filename) {}
-    virtual ~FileStorage() {}
-
-    bool save(const vector<Task>& tasks) override {
-        // TODO: общая логика записи в файл
-        return false;
+    bool save(const TaskList& list, const string& path) const {
+        TxtTaskStorage txt;
+        return txt.save(list, path);
     }
-    vector<Task> load() override {
-        // TODO: общая логика чтения из файла
-        return {};
+    int load(TaskList& list, const string& path) const {
+        TxtTaskStorage txt;
+        return txt.load(list, path);
     }
 };
+#endif // FILESTORAGE_H
