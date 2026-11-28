@@ -1,13 +1,9 @@
-// ITaskStorage.h
 #pragma once
-#include <vector>
-#include "Task.h"
-using namespace std;
-
-// Интерфейс: только чисто виртуальные методы
-class ITaskStorage {
-public:
-    virtual ~ITaskStorage() {}
-    virtual bool save(const vector<Task>& tasks) = 0;
-    virtual vector<Task> load() = 0;
-};
+// ITaskStorage.h
+// Сам класс ITaskStorage объявлен в TaskStorage.h — там, где он появился
+// в предыдущих домашних заданиях. Этот файл оставлен, чтобы все старые
+// включения (#include "ITaskStorage.h") продолжали работать.
+#ifndef ITASKSTORAGE_H
+#define ITASKSTORAGE_H
+#include "TaskStorage.h"
+#endif // ITASKSTORAGE_H
