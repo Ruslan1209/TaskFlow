@@ -189,7 +189,16 @@ public:
         if (n < 0) return "Не удалось открыть файл: " + s.getPathToFile();
         return "Загружено задач: " + to_string(n) + ". Номера пересчитаны заново.";
     }
-
+     
+    // --- пункт 13: Adapter — загрузка старого формата ---
+    string loadLegacy() {
+        list_.clear();
+        history_.clear();
+        LegacyFileAdapter adapter;
+        int n = adapter.load(list_, "todo_old.txt");
+        if (n < 0) return "Не удалось открыть файл: todo_old.txt";
+        return "Загружено из старого формата задач: " + to_string(n) + ".";
+    }
     // --- пункт 7 ---
     string settingsText() const {
         AppSettings& s = AppSettings::instance();
